@@ -1,4 +1,5 @@
 from argparse import ArgumentParser
+from contextlib import asynccontextmanager
 
 import uvicorn
 from common.config import cfg
@@ -44,8 +45,8 @@ FastAPP = FastAPI(
 )
 
 
-@FastAPP.on_event("startup")
-async def startup():
+@asynccontextmanager
+async def lifespan_function(app: FastAPI):
     await cfg.get_creds(CURRENT_ENV)
     print("INFO:\t  Config was loaded")
     await cfg.get_secrets(True)
@@ -76,10 +77,7 @@ async def startup():
 
     FastAPP.include_router(routers.routers, prefix="/api")
 
-
-@FastAPP.on_event("shutdown")
-async def shutdown():
-    from db.utils import _engine
+    yield
 
     await _engine.dispose()
 
