@@ -35,18 +35,9 @@ parser.add_argument(
 args = parser.parse_args()
 CURRENT_ENV = args.env
 
-FastAPP = FastAPI(
-    title="PWSI",
-    version="1.0.0",
-    exception_handlers=exception_handlers,
-    # openapi_url="/api/openapi.json",
-    # docs_url="/api/docs",
-    # redoc_url="/api/redoc",
-)
-
 
 @asynccontextmanager
-async def lifespan_function(app: FastAPI):
+async def lifespan_function(FastAPP: FastAPI):
     await cfg.get_creds(CURRENT_ENV)
     print("INFO:\t  Config was loaded")
     await cfg.get_secrets(True)
@@ -80,6 +71,17 @@ async def lifespan_function(app: FastAPI):
     yield
 
     await _engine.dispose()
+
+
+FastAPP = FastAPI(
+    title="PWSI",
+    version="1.0.0",
+    exception_handlers=exception_handlers,
+    lifespan=lifespan_function,
+    # openapi_url="/api/openapi.json",
+    # docs_url="/api/docs",
+    # redoc_url="/api/redoc",
+)
 
 
 if __name__ == "__main__":
