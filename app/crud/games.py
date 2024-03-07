@@ -13,7 +13,7 @@ class GamesData:
     def __init__(self) -> None:
         self.data = {}
         self.lists = {}
-        self.genres = []
+        self.genres = {}
         self.lock = asyncio.Lock()
 
         self.non_steam_border = 1000 * 1000 * 1000 * 1000
@@ -51,7 +51,7 @@ class GamesData:
                 )
             self.data = {}
             self.lists = {}
-            self.genres = []
+            self.genres = {}
             self.non_steam_game = self.non_steam_border
 
     def resort(self) -> None:
