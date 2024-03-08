@@ -11,7 +11,6 @@ from sqlalchemy.sql import text
 class LoreData:
     def __init__(self) -> None:
         self.data = {}
-        self.texts = set()
         self.sorted_list = []
         self.lock = asyncio.Lock()
 
@@ -25,7 +24,6 @@ class LoreData:
                     "block_id": row.block_id,
                     "order": row.order,
                 }
-                self.texts.add(row.text)
         self.resort()
         print("INFO:\t  Lore info was loaded to memory")
 
@@ -38,13 +36,32 @@ class LoreData:
                     )
                 )
             self.data = {}
-            self.texts = set()
             self.sorted_list = []
 
     def resort(self) -> None:
-        self.sorted_list = sorted(
+        sorted_lore = sorted(
             list(self.data.values()), key=lambda lore: (lore["block_id"], lore["order"])
         )
+        self.sorted_list = []
+        if not sorted_lore:
+            return
+
+        current_block = sorted_lore[0]["block_id"]
+        current_block_list = []
+        for lore in sorted_lore:
+            if current_block != lore["block_id"]:
+                self.sorted_list.append(
+                    {"block_id": current_block, "paragraphs": current_block_list}
+                )
+                current_block = lore["block_id"]
+                current_block_list = []
+            current_block_list.append(
+                {"id": lore["id"], "text": lore["text"], "order": lore["order"]}
+            )
+        if current_block_list:
+            self.sorted_list.append(
+                {"block_id": current_block, "paragraphs": current_block_list}
+            )
 
     async def add(
         self, session: AsyncSession, elements: list[schema_lore.NewElement]
@@ -81,7 +98,6 @@ class LoreData:
 
                     new_lore["id"] = new_element.id
                     self.data[new_element.id] = new_lore
-                    self.texts.add(element.text)
 
                     inserted_ids.append(new_element.id)
                     inserted_elements_count += 1
@@ -111,7 +127,6 @@ class LoreData:
                     for lore_id in self.data:
                         if self.data[lore_id]["order"] > self.data[element.id]["order"]:
                             self.data[lore_id]["order"] -= 1
-                    self.texts.remove(self.data[element.id]["text"])
                     del self.data[element.id]
                     delete_info.append(True)
             if True not in delete_info:
