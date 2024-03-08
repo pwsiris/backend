@@ -2,19 +2,15 @@ from pydantic import BaseModel
 
 
 class NewElement(BaseModel):
-    name: str
-    link: str
-    icon: str
-    type: str = ""
+    text: str
+    block_id: str
     order: int | None = None
 
 
 class UpdatedElement(BaseModel):
     id: int
-    name: str | None = None
-    link: str | None = None
-    icon: str | None = None
-    type: str | None = None
+    text: str | None = None
+    block_id: str | None = None
     order: int | None = None
 
 

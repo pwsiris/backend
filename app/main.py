@@ -5,6 +5,7 @@ import uvicorn
 from common.config import cfg
 from common.errors import exception_handlers
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import AsyncSession
 
 parser = ArgumentParser(description="PWSI backend")
@@ -50,19 +51,20 @@ async def lifespan_function(FastAPP: FastAPI):
     async with AsyncSession(_engine, expire_on_commit=False) as session:
         await all_data.SAVE_CHOICES.setup(session)
 
-        await all_data.BITE_BOTS.setup(session)
+        await all_data.BITE_IGNORE_LIST.setup(session)
         await all_data.BITE_ACTIONS.setup(session)
         await all_data.BITE_PLACES.setup(session)
         await all_data.BITE_BODY_PARTS.setup(session)
 
-        await all_data.COUNTER_DEATH.setup(session)
         await all_data.COUNTER.setup(session)
+        await all_data.COUNTER_DEATH.setup(session)
         await all_data.COUNTER_GLOBAL.setup(session)
 
         await all_data.ANIME.setup(session)
         await all_data.CHALLENGES.setup(session)
-        await all_data.SOCIALS.setup(session)
         await all_data.GAMES.setup(session)
+        await all_data.LORE.setup(session)
+        await all_data.SOCIALS.setup(session)
 
     from api import routers
 
@@ -82,6 +84,15 @@ FastAPP = FastAPI(
     # docs_url="/api/docs",
     # redoc_url="/api/redoc",
 )
+
+if CURRENT_ENV == "dev":
+    FastAPP.add_middleware(
+        CORSMiddleware,
+        allow_origin_regex=".*localhost:.*",
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
 
 if __name__ == "__main__":

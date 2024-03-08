@@ -70,7 +70,7 @@ async def bite_someone(sender: str, targets: list[str] = Query([])):
     target = cfg.STREAMER
     for variant in targets:
         if (
-            not all_data.BITE_BOTS.has(variant.lower().rstrip().lstrip())
+            not all_data.BITE_IGNORE_LIST.has(variant.lower().rstrip().lstrip())
             and variant.lower() != sender.lower()
         ):
             target = variant
