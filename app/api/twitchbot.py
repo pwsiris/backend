@@ -38,12 +38,10 @@ async def timecode(
                 }
             ]
         }
-        description = (
-            description.replace("!тк", "")
-            .replace("!tc", "")
-            .replace("!timecode", "")
-            .lstrip(" ")
-        )
+        for prefix in ("!тк", "!tc", "!timecode"):
+            description = description.replace(prefix, "")
+            description = description.replace(prefix.upper(), "")
+        description = description.lstrip(" ")
         if description:
             json["embeds"][0]["description"] = description
         answer = await ac.post(cfg.DISCORD_HOOK_TIMECODE, json=json)
