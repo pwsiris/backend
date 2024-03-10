@@ -2,7 +2,7 @@ from datetime import datetime
 
 from sqlalchemy import MetaData
 from sqlalchemy.orm import Mapped, declarative_base, mapped_column
-from sqlalchemy.types import BIGINT, TIMESTAMP
+from sqlalchemy.types import BIGINT, TIMESTAMP, Text
 
 SCHEMA = "pwsi"
 Base = declarative_base(metadata=MetaData(schema=SCHEMA))
@@ -84,3 +84,12 @@ class Games(Base):
     records: Mapped[str]
     comment: Mapped[str]
     order_by: Mapped[str]
+
+
+class Lore(Base):
+    __tablename__ = "lore"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    text: Mapped[str] = mapped_column(Text, nullable=False)
+    block_id: Mapped[str] = mapped_column(nullable=False)
+    order: Mapped[int] = mapped_column(nullable=False)

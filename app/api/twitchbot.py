@@ -38,12 +38,10 @@ async def timecode(
                 }
             ]
         }
-        description = (
-            description.replace("!тк", "")
-            .replace("!tc", "")
-            .replace("!timecode", "")
-            .lstrip(" ")
-        )
+        for prefix in ("!тк", "!tc", "!timecode"):
+            description = description.replace(prefix, "")
+            description = description.replace(prefix.upper(), "")
+        description = description.lstrip(" ")
         if description:
             json["embeds"][0]["description"] = description
         answer = await ac.post(cfg.DISCORD_HOOK_TIMECODE, json=json)
@@ -70,7 +68,7 @@ async def bite_someone(sender: str, targets: list[str] = Query([])):
     target = cfg.STREAMER
     for variant in targets:
         if (
-            not all_data.BITE_BOTS.has(variant.lower().rstrip().lstrip())
+            not all_data.BITE_IGNORE_LIST.has(variant.lower().rstrip().lstrip())
             and variant.lower() != sender.lower()
         ):
             target = variant

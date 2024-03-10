@@ -1,6 +1,7 @@
 from crud.anime import AnimeData
 from crud.challenges import ChallengesData
 from crud.games import GamesData
+from crud.lore import LoreData
 from crud.socials import SocialsData
 from crud.twitchbot_counters import TwitchBotCounter
 from crud.twitchbot_lists import TwitchBotList
@@ -15,7 +16,7 @@ class AllData:
         self.BITE_CHEAT_STREAMER_PERCENT = 0
         self.BITE_CHEAT_DEFENSE_PERCENT = 0
 
-        self.BITE_BOTS = TwitchBotList("bite_bots")
+        self.BITE_IGNORE_LIST = TwitchBotList("bite_ignore_list")
         self.BITE_ACTIONS = TwitchBotList("bite_actions")
         self.BITE_PLACES = TwitchBotList("bite_places")
         self.BITE_BODY_PARTS = TwitchBotList("bite_body_parts")
@@ -24,6 +25,7 @@ class AllData:
         self.COUNTER = TwitchBotCounter("count")
         self.COUNTER_GLOBAL = TwitchBotCounter("global")
 
+        self.LORE = LoreData()
         self.ANIME = AnimeData()
         self.CHALLENGES = ChallengesData()
         self.GAMES = GamesData()
@@ -32,7 +34,7 @@ class AllData:
     def has_list(self, name: str) -> bool:
         return name.upper() in (
             "SAVE_CHOICES",
-            "BITE_BOTS",
+            "BITE_IGNORE_LIST",
             "BITE_ACTIONS",
             "BITE_PLACES",
             "BITE_BODY_PARTS",
@@ -41,7 +43,7 @@ class AllData:
     def is_twitchbot(self, name: str) -> bool:
         return name.upper() in (
             "SAVE_CHOICES",
-            "BITE_BOTS",
+            "BITE_IGNORE_LIST",
             "BITE_ACTIONS",
             "BITE_PLACES",
             "BITE_BODY_PARTS",

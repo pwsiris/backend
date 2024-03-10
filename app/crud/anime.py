@@ -81,7 +81,14 @@ class AnimeData:
             ) as ac:
                 response = await ac.get(f"/anime/{id}")
                 if response.status_code != 200:
-                    print(f"Error getting anime {id} info")
+                    details = ""
+                    try:
+                        details = str(response.json())
+                    except Exception:
+                        pass
+                    print(
+                        f"Error getting anime {id} info. Code: {response.status_code}, Details: {details}."
+                    )
                     return {}
         except Exception:
             print(f"Error getting anime {id} info from MAL api")

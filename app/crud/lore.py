@@ -1,55 +1,70 @@
 import asyncio
 
 from common.errors import HTTPabort
-from db.models import SCHEMA, Socials
-from schemas import socials as schema_socials
+from db.models import SCHEMA, Lore
+from schemas import lore as schema_lore
 from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql import text
 
 
-class SocialsData:
+class LoreData:
     def __init__(self) -> None:
         self.data = {}
-        self.links = set()
         self.sorted_list = []
         self.lock = asyncio.Lock()
 
     async def setup(self, session: AsyncSession) -> None:
         async with session.begin():
-            db_data = await session.scalars(select(Socials))
+            db_data = await session.scalars(select(Lore))
             for row in db_data:
                 self.data[row.id] = {
                     "id": row.id,
-                    "name": row.name,
-                    "link": row.link,
-                    "icon": row.icon,
-                    "type": row.type,
+                    "text": row.text,
+                    "block_id": row.block_id,
                     "order": row.order,
                 }
-                self.links.add(row.link)
         self.resort()
-        print("INFO:\t  Socials info was loaded to memory")
+        print("INFO:\t  Lore info was loaded to memory")
 
     async def reset(self, session: AsyncSession) -> None:
         async with self.lock:
             async with session.begin():
                 await session.execute(
                     text(
-                        f"TRUNCATE TABLE {SCHEMA}.{Socials.__table__.name} RESTART IDENTITY;"
+                        f"TRUNCATE TABLE {SCHEMA}.{Lore.__table__.name} RESTART IDENTITY;"
                     )
                 )
             self.data = {}
-            self.links = set()
             self.sorted_list = []
 
     def resort(self) -> None:
-        self.sorted_list = sorted(
-            list(self.data.values()), key=lambda social: social["order"]
+        sorted_lore = sorted(
+            list(self.data.values()), key=lambda lore: (lore["block_id"], lore["order"])
         )
+        self.sorted_list = []
+        if not sorted_lore:
+            return
+
+        current_block = sorted_lore[0]["block_id"]
+        current_block_list = []
+        for lore in sorted_lore:
+            if current_block != lore["block_id"]:
+                self.sorted_list.append(
+                    {"block_id": current_block, "paragraphs": current_block_list}
+                )
+                current_block = lore["block_id"]
+                current_block_list = []
+            current_block_list.append(
+                {"id": lore["id"], "text": lore["text"], "order": lore["order"]}
+            )
+        if current_block_list:
+            self.sorted_list.append(
+                {"block_id": current_block, "paragraphs": current_block_list}
+            )
 
     async def add(
-        self, session: AsyncSession, elements: list[schema_socials.NewElement]
+        self, session: AsyncSession, elements: list[schema_lore.NewElement]
     ) -> list[int]:
         if not elements:
             return HTTPabort(422, "Empty list")
@@ -57,16 +72,12 @@ class SocialsData:
             inserted_elements_count = 0
             inserted_ids = []
             for element in elements:
-                if element.link in self.links:
-                    inserted_ids.append(-1)
-                    continue
-
                 if element.order and 1 <= element.order <= (len(self.data) + 1):
                     async with session.begin():
                         await session.execute(
-                            update(Socials)
-                            .where(Socials.order >= element.order)
-                            .values(order=Socials.order + 1)
+                            update(Lore)
+                            .where(Lore.order >= element.order)
+                            .values(order=Lore.order + 1)
                         )
                         for social_id in self.data:
                             if self.data[social_id]["order"] >= element.order:
@@ -75,21 +86,18 @@ class SocialsData:
                     element.order = len(self.data) + 1
 
                 async with session.begin():
-                    new_social = {
-                        "name": element.name,
-                        "link": element.link,
-                        "icon": element.icon,
-                        "type": element.type,
+                    new_lore = {
+                        "text": element.text,
+                        "block_id": element.block_id,
                         "order": element.order,
                     }
-                    new_element = Socials(**new_social)
+                    new_element = Lore(**new_lore)
                     session.add(new_element)
                     await session.flush()
                     await session.refresh(new_element)
 
-                    new_social["id"] = new_element.id
-                    self.data[new_element.id] = new_social
-                    self.links.add(element.link)
+                    new_lore["id"] = new_element.id
+                    self.data[new_element.id] = new_lore
 
                     inserted_ids.append(new_element.id)
                     inserted_elements_count += 1
@@ -99,7 +107,7 @@ class SocialsData:
             return inserted_ids
 
     async def delete(
-        self, session: AsyncSession, elements: list[schema_socials.DeletedElement]
+        self, session: AsyncSession, elements: list[schema_lore.DeletedElement]
     ) -> list[bool]:
         if not elements:
             return HTTPabort(422, "Empty list")
@@ -110,21 +118,15 @@ class SocialsData:
                     delete_info.append(False)
                     continue
                 async with session.begin():
+                    await session.execute(delete(Lore).where(Lore.id == element.id))
                     await session.execute(
-                        delete(Socials).where(Socials.id == element.id)
+                        update(Lore)
+                        .where(Lore.order > self.data[element.id]["order"])
+                        .values(order=Lore.order - 1)
                     )
-                    await session.execute(
-                        update(Socials)
-                        .where(Socials.order > self.data[element.id]["order"])
-                        .values(order=Socials.order - 1)
-                    )
-                    for social_id in self.data:
-                        if (
-                            self.data[social_id]["order"]
-                            > self.data[element.id]["order"]
-                        ):
-                            self.data[social_id]["order"] -= 1
-                    self.links.remove(self.data[element.id]["link"])
+                    for lore_id in self.data:
+                        if self.data[lore_id]["order"] > self.data[element.id]["order"]:
+                            self.data[lore_id]["order"] -= 1
                     del self.data[element.id]
                     delete_info.append(True)
             if True not in delete_info:
@@ -133,7 +135,7 @@ class SocialsData:
             return delete_info
 
     async def update(
-        self, session: AsyncSession, elements: list[schema_socials.UpdatedElement]
+        self, session: AsyncSession, elements: list[schema_lore.UpdatedElement]
     ) -> list[str]:
         if not elements:
             return HTTPabort(422, "Empty list")
@@ -144,9 +146,6 @@ class SocialsData:
                     update_info.append("No element")
                     continue
                 dicted_element = element.model_dump(exclude={"id"}, exclude_none=True)
-                if dicted_element.get("link") in self.links:
-                    update_info.append("New link not unique")
-                    continue
                 if dicted_element.get("order") != None:
                     if 1 <= element.order <= len(self.data):
                         changed_orders = []
@@ -171,32 +170,24 @@ class SocialsData:
                         if changed_orders:
                             async with session.begin():
                                 await session.execute(
-                                    update(Socials)
-                                    .where(Socials.order.in_(changed_orders))
-                                    .values(order=Socials.order + change)
+                                    update(Lore)
+                                    .where(Lore.order.in_(changed_orders))
+                                    .values(order=Lore.order + change)
                                 )
-                                for social_id in self.data:
-                                    if self.data[social_id]["order"] in changed_orders:
-                                        self.data[social_id]["order"] += change
+                                for lore_id in self.data:
+                                    if self.data[lore_id]["order"] in changed_orders:
+                                        self.data[lore_id]["order"] += change
                     else:
                         del dicted_element["order"]
 
                 async with session.begin():
                     await session.execute(
-                        update(Socials)
-                        .where(Socials.id == element.id)
-                        .values(dicted_element)
+                        update(Lore).where(Lore.id == element.id).values(dicted_element)
                     )
-                if "link" in dicted_element:
-                    self.links.remove(self.data[element.id]["link"])
-                    self.links.add(dicted_element["link"])
                 self.data[element.id].update(dicted_element)
                 update_info.append("Updated")
             if "Updated" not in update_info:
-                if "New link not unique" not in update_info:
-                    HTTPabort(404, "No elements to update")
-                if "No element" not in update_info:
-                    HTTPabort(409, "No new unique links")
+                HTTPabort(404, "No elements to update")
             self.resort()
             return update_info
 
