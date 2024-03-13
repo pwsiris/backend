@@ -22,7 +22,7 @@ class TwitchBotCounters(Base):
     name: Mapped[str] = mapped_column(primary_key=True)
     type: Mapped[str] = mapped_column(primary_key=True)
     value: Mapped[int] = mapped_column(nullable=False)
-    updated: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True))
+    updated: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
 
 
 class Socials(Base):
@@ -32,7 +32,7 @@ class Socials(Base):
     name: Mapped[str] = mapped_column(nullable=False)
     link: Mapped[str] = mapped_column(nullable=False, unique=True)
     icon: Mapped[str] = mapped_column(nullable=False)
-    type: Mapped[str]
+    type: Mapped[str] = mapped_column(nullable=True)
     order: Mapped[int] = mapped_column(nullable=False)
 
 
@@ -41,18 +41,22 @@ class Anime(Base):
 
     id: Mapped[int] = mapped_column(BIGINT, primary_key=True)
     name: Mapped[str] = mapped_column(nullable=False)
-    link: Mapped[str]
-    type: Mapped[str]
-    episodes: Mapped[int]
-    picture: Mapped[str]
-    score: Mapped[int]
-    status: Mapped[str]
-    added_time: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True))
-    completed_time: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True))
-    comment: Mapped[str]
-    voice_acting: Mapped[str]
-    order_by: Mapped[str]
-    series: Mapped[str]
+    link: Mapped[str] = mapped_column(nullable=True)
+    type: Mapped[str] = mapped_column(nullable=True)
+    episodes: Mapped[int] = mapped_column(nullable=True)
+    picture: Mapped[str] = mapped_column(nullable=True)
+    score: Mapped[int] = mapped_column(nullable=True)
+    status: Mapped[str] = mapped_column(nullable=True)
+    added_time: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True), nullable=True
+    )
+    completed_time: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True), nullable=True
+    )
+    comment: Mapped[str] = mapped_column(nullable=True)
+    voice_acting: Mapped[str] = mapped_column(nullable=True)
+    order_by: Mapped[str] = mapped_column(nullable=True)
+    series: Mapped[str] = mapped_column(nullable=True)
 
 
 class Challenges(Base):
@@ -60,14 +64,14 @@ class Challenges(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(nullable=False)
-    picture: Mapped[str]
-    order_by: Mapped[str]
-    description: Mapped[str]
-    comment: Mapped[str]
-    status: Mapped[str]
-    type: Mapped[str]
-    price: Mapped[str]
-    records: Mapped[str]
+    picture: Mapped[str] = mapped_column(nullable=True)
+    order_by: Mapped[str] = mapped_column(nullable=True)
+    description: Mapped[str] = mapped_column(nullable=True)
+    comment: Mapped[str] = mapped_column(nullable=True)
+    status: Mapped[str] = mapped_column(nullable=True)
+    type: Mapped[str] = mapped_column(nullable=True)
+    price: Mapped[str] = mapped_column(nullable=True)
+    records: Mapped[str] = mapped_column(nullable=True)
 
 
 class Games(Base):
@@ -75,15 +79,15 @@ class Games(Base):
 
     id: Mapped[int] = mapped_column(BIGINT, primary_key=True)
     name: Mapped[str] = mapped_column(nullable=False)
-    subname: Mapped[str]
-    link: Mapped[str]
-    picture: Mapped[str]
-    status: Mapped[str]
+    subname: Mapped[str] = mapped_column(nullable=True)
+    link: Mapped[str] = mapped_column(nullable=True)
+    picture: Mapped[str] = mapped_column(nullable=True)
+    status: Mapped[str] = mapped_column(nullable=True)
     genre: Mapped[str] = mapped_column(nullable=False)
-    type: Mapped[str]
-    records: Mapped[str]
-    comment: Mapped[str]
-    order_by: Mapped[str]
+    type: Mapped[str] = mapped_column(nullable=True)
+    records: Mapped[str] = mapped_column(nullable=True)
+    comment: Mapped[str] = mapped_column(nullable=True)
+    order_by: Mapped[str] = mapped_column(nullable=True)
 
 
 class Lore(Base):
@@ -93,3 +97,19 @@ class Lore(Base):
     text: Mapped[str] = mapped_column(Text, nullable=False)
     block_id: Mapped[str] = mapped_column(nullable=False)
     order: Mapped[int] = mapped_column(nullable=False)
+
+
+class Marathons(Base):
+    __tablename__ = "marathons"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(nullable=False)
+    description: Mapped[str] = mapped_column(nullable=True)
+    comment: Mapped[str] = mapped_column(nullable=True)
+    status: Mapped[str] = mapped_column(nullable=True)
+    picture: Mapped[str] = mapped_column(nullable=True)
+    records: Mapped[str] = mapped_column(nullable=True)
+    order: Mapped[int] = mapped_column(nullable=False)
+    link: Mapped[str] = mapped_column(nullable=True)
+    marathon_id: Mapped[int] = mapped_column(nullable=True)
+    steam_id: Mapped[int] = mapped_column(nullable=True)

@@ -79,9 +79,9 @@ class LoreData:
                             .where(Lore.order >= element.order)
                             .values(order=Lore.order + 1)
                         )
-                        for social_id in self.data:
-                            if self.data[social_id]["order"] >= element.order:
-                                self.data[social_id]["order"] += 1
+                        for lore_id in self.data:
+                            if self.data[lore_id]["order"] >= element.order:
+                                self.data[lore_id]["order"] += 1
                 else:
                     element.order = len(self.data) + 1
 
