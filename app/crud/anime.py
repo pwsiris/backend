@@ -156,7 +156,7 @@ class AnimeData:
                 seriesed[anime_series]["score"] = round(
                     seriesed[anime_series]["score_sum"]
                     / seriesed[anime_series]["score_count"],
-                    2,
+                    1,
                 )
                 del seriesed[anime_series]["score_sum"]
                 del seriesed[anime_series]["score_count"]
