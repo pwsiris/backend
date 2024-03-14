@@ -120,6 +120,9 @@ class AnimeData:
                         "completed_time": anime["completed_time"],
                         "list": [anime],
                     }
+                    if anime["score"]:
+                        seriesed[anime["series"]]["score_sum"] = anime["score"]
+                        seriesed[anime["series"]]["score_count"] = 1
                     continue
 
                 curr_series = seriesed[anime["series"]]
@@ -141,8 +144,22 @@ class AnimeData:
                 ):
                     updated_data["added_time"] = anime["added_time"]
 
+                if anime["score"]:
+                    seriesed[anime["series"]]["score_sum"] += anime["score"]
+                    seriesed[anime["series"]]["score_count"] += 1
+
                 seriesed[anime["series"]].update(updated_data)
                 seriesed[anime["series"]]["list"].append(anime)
+
+        for anime_series in seriesed:
+            if seriesed[anime_series].get("score_sum"):
+                seriesed[anime_series]["score"] = round(
+                    seriesed[anime_series]["score_sum"]
+                    / seriesed[anime_series]["score_count"],
+                    1,
+                )
+                del seriesed[anime_series]["score_sum"]
+                del seriesed[anime_series]["score_count"]
 
         all_anime = [anime for anime in self.data.values() if not anime["series"]]
 
