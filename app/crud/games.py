@@ -79,15 +79,15 @@ class GamesData:
         self.lists = typed_games
         self.genres = typed_genres
 
-    async def check_steam(self, id: int, link: str) -> dict:
+    async def check_steam(self, steam_id: int) -> dict:
         result = {}
-        if id < self.non_steam_border or "https://store.steampowered.com/app/" in link:
-            result["link"] = f"https://store.steampowered.com/app/{id}"
+        if steam_id < self.non_steam_border:
+            result["link"] = f"https://store.steampowered.com/app/{steam_id}"
             try:
                 templates = [
-                    f"https://cdn.akamai.steamstatic.com/steam/apps/{id}/capsule_616x353.jpg",
-                    f"https://cdn.akamai.steamstatic.com/steam/apps/{id}/header.jpg",
-                    f"https://cdn.cloudflare.steamstatic.com/steam/apps/{id}/header.jpg",
+                    f"https://cdn.akamai.steamstatic.com/steam/apps/{steam_id}/capsule_616x353.jpg",
+                    f"https://cdn.akamai.steamstatic.com/steam/apps/{steam_id}/header.jpg",
+                    f"https://cdn.cloudflare.steamstatic.com/steam/apps/{steam_id}/header.jpg",
                 ]
                 for template in templates:
                     async with httpx.AsyncClient() as ac:
@@ -96,9 +96,9 @@ class GamesData:
                             result["picture"] = template
                             break
                 if not result.get("picture"):
-                    print(f"No valid pic for steam-game {id}")
+                    print(f"No valid pic for steam-game {steam_id}")
             except Exception:
-                print(f"Error getting steam-game {id} pic")
+                print(f"Error getting steam-game {steam_id} pic")
         return result
 
     async def add(
@@ -117,14 +117,14 @@ class GamesData:
                     inserted_ids.append(-1)
                     continue
 
-                additional_info = await self.check_steam(element.id, element.link or "")
+                additional_info = await self.check_steam(element.id)
                 async with session.begin():
                     new_game = {
                         "id": element.id,
                         "name": element.name,
                         "subname": element.subname,
-                        "link": element.link or additional_info.get("link"),
-                        "picture": element.picture or additional_info.get("picture"),
+                        "link": additional_info.get("link") or element.link,
+                        "picture": additional_info.get("picture") or element.picture,
                         "status": element.status,
                         "genre": element.genre,
                         "type": element.type,
@@ -195,9 +195,7 @@ class GamesData:
                     self.data[new_id] = self.data.pop(element.id)
                     element.id = new_id
                     dicted_element["id"] = new_id
-                    dicted_element.update(
-                        await self.check_steam(element.id, element.link or "")
-                    )
+                    dicted_element.update(await self.check_steam(element.id))
 
                 for key, value in dicted_element.items():
                     if value == "":
