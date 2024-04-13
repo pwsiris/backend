@@ -141,6 +141,8 @@ class AnimeData:
                         curr_series["completed_time"] or UNIX_ZERO
                     ):
                         updated_data["completed_time"] = anime["completed_time"]
+                    else:
+                        updated_data["completed_time"] = curr_series["completed_time"]
 
                 if curr_series["status"] == anime["status"] == "Просмотрено":
                     if anime["completed_time"] > curr_series["completed_time"]:
