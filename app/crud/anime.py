@@ -24,7 +24,7 @@ class AnimeData:
             "Смотрим": 1,
             "": 2,
             "Просмотрено": 3,
-            "Дропнуто": 4,
+            "Заброшено": 3,
         }
         self.type_mapping = {
             "tv": "Сериал",
@@ -133,10 +133,19 @@ class AnimeData:
                     updated_data["completed_time"] = None
 
                 if (
-                    curr_series["status"] == "Просмотрено"
-                    and anime["status"] == "Просмотрено"
+                    curr_series["status"] == "Заброшено"
+                    or anime["status"] == "Заброшено"
                 ):
-                    if anime["completed_time"] < curr_series["completed_time"]:
+                    updated_data["status"] = "Заброшено"
+                    if (anime["completed_time"] or UNIX_ZERO) > (
+                        curr_series["completed_time"] or UNIX_ZERO
+                    ):
+                        updated_data["completed_time"] = anime["completed_time"]
+                    else:
+                        updated_data["completed_time"] = curr_series["completed_time"]
+
+                if curr_series["status"] == anime["status"] == "Просмотрено":
+                    if anime["completed_time"] > curr_series["completed_time"]:
                         updated_data["completed_time"] = anime["completed_time"]
 
                 if (anime["added_time"] or UNIX_ZERO) < (
@@ -157,11 +166,12 @@ class AnimeData:
 
         for anime_series in seriesed:
             if seriesed[anime_series].get("score_sum", None) != None:
-                seriesed[anime_series]["score"] = round(
-                    seriesed[anime_series]["score_sum"]
-                    / seriesed[anime_series]["score_count"],
-                    1,
-                )
+                if seriesed[anime_series]["status"] != "Заброшено":
+                    seriesed[anime_series]["score"] = round(
+                        seriesed[anime_series]["score_sum"]
+                        / seriesed[anime_series]["score_count"],
+                        1,
+                    )
                 del seriesed[anime_series]["score_sum"]
                 del seriesed[anime_series]["score_count"]
 
@@ -303,7 +313,7 @@ class AnimeData:
                     dicted_element["id"] = new_id
                     dicted_element.update(await self.get_anime_mal_info(element.id))
 
-                if dicted_element.get("status") == "Просмотрено":
+                if dicted_element.get("status") in ("Просмотрено", "Заброшено"):
                     dicted_element["completed_time"] = dicted_element.get(
                         "completed_time"
                     ) or datetime.now(timezone.utc)
