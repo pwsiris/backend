@@ -62,6 +62,11 @@ class GamesData:
             game_type = game["type"] or "main"
             if game_type not in typed_games:
                 typed_games[game_type] = []
+
+            if game["records"]:
+                game["records"] = sorted(
+                    game["records"], key=lambda record: record.get("order", 1)
+                )
             typed_games[game_type].append(game)
 
             if game_type not in typed_genres:
@@ -119,16 +124,23 @@ class GamesData:
 
                 additional_info = await self.check_steam(element.id)
                 async with session.begin():
+                    # new_game = element.model_dump()
+                    # if not new_game["link"]:
+                    #     new_game["link"] = additional_info.get("link")
+                    # if not new_game["picture"]:
+                    #     new_game["picture"] = additional_info.get("picture")
                     new_game = {
                         "id": element.id,
                         "name": element.name,
                         "subname": element.subname,
-                        "link": additional_info.get("link") or element.link,
-                        "picture": additional_info.get("picture") or element.picture,
+                        "link": element.link or additional_info.get("link"),
+                        "picture": element.picture or additional_info.get("picture"),
                         "status": element.status,
                         "genre": element.genre,
                         "type": element.type,
-                        "records": element.records,
+                        "records": [record.model_dump() for record in element.records]
+                        if element.records
+                        else None,
                         "comment": element.comment,
                         "order_by": element.order_by,
                     }
@@ -198,7 +210,7 @@ class GamesData:
                     dicted_element.update(await self.check_steam(element.id))
 
                 for key, value in dicted_element.items():
-                    if value == "":
+                    if value in ("", []):
                         dicted_element[key] = None
 
                 async with session.begin():

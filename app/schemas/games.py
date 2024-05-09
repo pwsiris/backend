@@ -1,4 +1,17 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
+from typing_extensions import Self
+
+
+class Records(BaseModel):
+    name: str
+    url: str
+    order: int | None = None
+
+    @model_validator(mode="after")
+    def exclude_order(self) -> Self:
+        if self.order == None:
+            del self.order
+        return self
 
 
 class NewElement(BaseModel):
@@ -8,7 +21,7 @@ class NewElement(BaseModel):
     status: str | None = None
     genre: str | None = None
     type: str | None = None
-    records: str | None = None
+    records: list[Records] | None = None
     comment: str | None = None
     order_by: str | None = None
 
@@ -30,7 +43,7 @@ class UpdatedElement(BaseModel):
     status: str | None = None
     genre: str | None = None
     type: str | None = None
-    records: str | None = None
+    records: list[Records] | None = None
     comment: str | None = None
     order_by: str | None = None
 

@@ -162,4 +162,4 @@ cython_debug/
 # Project
 .vscode/
 config/config.yaml
-alembic.sh
+scripts/

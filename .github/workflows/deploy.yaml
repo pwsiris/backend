@@ -94,7 +94,7 @@ jobs:
             tar -xf ~/builds/pwsi-backend-${{ env.B_ENV }}.tar -C ~/builds/pwsi-backend-${{ env.B_ENV }}/
             cd ~/builds/pwsi-backend-${{ env.B_ENV }}/
             export PWSI_DB_DSN=${{ env.PWSI__DB_DSN }}
-            python3 -m alembic upgrade head
+            python3.10 -m alembic upgrade head
             cd ~
             rm ~/builds/pwsi-backend-${{ env.B_ENV }}.tar
             sudo rm -rf ~/builds/pwsi-backend-${{ env.B_ENV }}
@@ -132,6 +132,7 @@ jobs:
               -it \
               --name pwsi-backend-${{ env.B_ENV }} \
               --network=host \
+              --restart always \
               -e APP_HOST=127.0.0.1 \
               -e APP_PORT=${{ env.PWSI_DEPLOY_DOCKER_PORT }} \
               -e APP_ENV=${{ env.B_ENV }} \
