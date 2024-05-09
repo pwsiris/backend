@@ -2,7 +2,7 @@ from datetime import datetime
 
 from sqlalchemy import MetaData
 from sqlalchemy.orm import Mapped, declarative_base, mapped_column
-from sqlalchemy.types import BIGINT, TIMESTAMP, Text
+from sqlalchemy.types import BIGINT, JSON, TIMESTAMP, Text
 
 SCHEMA = "pwsi"
 Base = declarative_base(metadata=MetaData(schema=SCHEMA))
@@ -85,7 +85,7 @@ class Games(Base):
     status: Mapped[str] = mapped_column(nullable=True)
     genre: Mapped[str] = mapped_column(nullable=False)
     type: Mapped[str] = mapped_column(nullable=True)
-    records: Mapped[str] = mapped_column(nullable=True)
+    records: Mapped[list[dict[str, str | int]]] = mapped_column(JSON, nullable=True)
     comment: Mapped[str] = mapped_column(nullable=True)
     order_by: Mapped[str] = mapped_column(nullable=True)
 
