@@ -3,6 +3,7 @@ from crud.challenges import ChallengesData
 from crud.games import GamesData
 from crud.lore import LoreData
 from crud.marathons import MarathonsData
+from crud.roulette import RouletteData
 from crud.socials import SocialsData
 from crud.twitchbot_counters import TwitchBotCounter
 from crud.twitchbot_lists import TwitchBotList
@@ -31,6 +32,7 @@ class AllData:
         self.GAMES = GamesData()
         self.LORE = LoreData()
         self.MARATHONS = MarathonsData()
+        self.ROULETTE = RouletteData()
         self.SOCIALS = SocialsData()
 
     def has_list(self, name: str) -> bool:

@@ -113,3 +113,12 @@ class Marathons(Base):
     link: Mapped[str] = mapped_column(nullable=True)
     marathon_id: Mapped[int] = mapped_column(nullable=True)
     steam_id: Mapped[int] = mapped_column(nullable=True)
+
+
+class RouletteAwards(Base):
+    __tablename__ = "roulette_awards"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(nullable=False, unique=True)
+    rarity: Mapped[str] = mapped_column(nullable=False)
+    description: Mapped[str] = mapped_column(nullable=True)
