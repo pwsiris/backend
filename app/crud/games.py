@@ -1,7 +1,10 @@
 import asyncio
 
 import httpx
+from common.config import cfg
 from common.errors import HTTPabort
+from common.utils import get_logger, levelDEBUG, levelINFO
+from db.common import get_model_dict
 from db.models import SCHEMA, Games
 from schemas import games as schema_games
 from sqlalchemy import delete, select, update
@@ -11,6 +14,7 @@ from sqlalchemy.sql import text
 
 class GamesData:
     def __init__(self) -> None:
+        self.logger = get_logger(levelDEBUG if cfg.ENV == "dev" else levelINFO)
         self.data = {}
         self.lists = {}
         self.genres = {}
@@ -25,21 +29,9 @@ class GamesData:
             for row in db_data:
                 if row.id > self.non_steam_border and row.id > self.non_steam_game:
                     self.non_steam_game = row.id
-                self.data[row.id] = {
-                    "id": row.id,
-                    "name": row.name,
-                    "subname": row.subname,
-                    "link": row.link,
-                    "picture": row.picture,
-                    "status": row.status,
-                    "genre": row.genre,
-                    "type": row.type,
-                    "records": row.records,
-                    "comment": row.comment,
-                    "order_by": row.order_by,
-                }
+                self.data[row.id] = get_model_dict(row)
         self.resort()
-        print("INFO:\t  Games info was loaded to memory")
+        self.logger.info("Games info was loaded to memory")
 
     async def reset(self, session: AsyncSession) -> None:
         async with self.lock:
@@ -101,9 +93,9 @@ class GamesData:
                             result["picture"] = template
                             break
                 if not result.get("picture"):
-                    print(f"No valid pic for steam-game {steam_id}")
+                    self.logger.warning(f"No valid pic for steam-game {steam_id}")
             except Exception:
-                print(f"Error getting steam-game {steam_id} pic")
+                self.logger.warning(f"Error getting steam-game {steam_id} pic")
         return result
 
     async def add(
@@ -124,29 +116,15 @@ class GamesData:
 
                 additional_info = await self.check_steam(element.id)
                 async with session.begin():
-                    # new_game = element.model_dump()
-                    # if not new_game["link"]:
-                    #     new_game["link"] = additional_info.get("link")
-                    # if not new_game["picture"]:
-                    #     new_game["picture"] = additional_info.get("picture")
-                    new_game = {
-                        "id": element.id,
-                        "name": element.name,
-                        "subname": element.subname,
-                        "link": element.link or additional_info.get("link"),
-                        "picture": element.picture or additional_info.get("picture"),
-                        "status": element.status,
-                        "genre": element.genre,
-                        "type": element.type,
-                        "records": [record.model_dump() for record in element.records]
-                        if element.records
-                        else None,
-                        "comment": element.comment,
-                        "order_by": element.order_by,
-                    }
-                    new_element = Games(**new_game)
-                    session.add(new_element)
-                    self.data[element.id] = new_game
+                    dicted_element = element.model_dump()
+                    if dicted_element["link"] is None:
+                        dicted_element["link"] = additional_info.get("link")
+                    if dicted_element["picture"] is None:
+                        dicted_element["picture"] = additional_info.get("picture")
+                    new_game = Games(**dicted_element)
+                    session.add(new_game)
+                    self.data[element.id] = dicted_element
+
                     inserted_ids.append(element.id)
                     inserted_elements_count += 1
             if not inserted_elements_count:

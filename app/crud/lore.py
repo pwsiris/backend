@@ -1,6 +1,9 @@
 import asyncio
 
+from common.config import cfg
 from common.errors import HTTPabort
+from common.utils import get_logger, levelDEBUG, levelINFO
+from db.common import get_model_dict
 from db.models import SCHEMA, Lore
 from schemas import lore as schema_lore
 from sqlalchemy import delete, select, update
@@ -10,6 +13,7 @@ from sqlalchemy.sql import text
 
 class LoreData:
     def __init__(self) -> None:
+        self.logger = get_logger(levelDEBUG if cfg.ENV == "dev" else levelINFO)
         self.data = {}
         self.sorted_list = []
         self.lock = asyncio.Lock()
@@ -18,14 +22,9 @@ class LoreData:
         async with session.begin():
             db_data = await session.scalars(select(Lore))
             for row in db_data:
-                self.data[row.id] = {
-                    "id": row.id,
-                    "text": row.text,
-                    "block_id": row.block_id,
-                    "order": row.order,
-                }
+                self.data[row.id] = get_model_dict(row)
         self.resort()
-        print("INFO:\t  Lore info was loaded to memory")
+        self.logger.info("Lore info was loaded to memory")
 
     async def reset(self, session: AsyncSession) -> None:
         async with self.lock:
@@ -86,20 +85,16 @@ class LoreData:
                     element.order = len(self.data) + 1
 
                 async with session.begin():
-                    new_lore = {
-                        "text": element.text,
-                        "block_id": element.block_id,
-                        "order": element.order,
-                    }
-                    new_element = Lore(**new_lore)
-                    session.add(new_element)
+                    dicted_element = element.model_dump()
+                    new_lore = Lore(**dicted_element)
+                    session.add(new_lore)
                     await session.flush()
-                    await session.refresh(new_element)
+                    await session.refresh(new_lore)
 
-                    new_lore["id"] = new_element.id
-                    self.data[new_element.id] = new_lore
+                    dicted_element["id"] = new_lore.id
+                    self.data[new_lore.id] = dicted_element
 
-                    inserted_ids.append(new_element.id)
+                    inserted_ids.append(new_lore.id)
                     inserted_elements_count += 1
             if not inserted_elements_count:
                 HTTPabort(409, "Elements already exist")

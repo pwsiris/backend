@@ -1,4 +1,5 @@
 from common.config import cfg
+from common.errors import HTTPabort
 from fastapi import APIRouter, Depends
 from schemas import admin as schema_admin
 
@@ -9,7 +10,11 @@ router = APIRouter()
 
 @router.get("/secrets", dependencies=[Depends(login_admin_required)])
 async def secrets_update():
-    return HTTPanswer(200, {"Not updated": await cfg.get_secrets(False)})
+    error, secrets_data = await cfg.load_secrets_async()
+    if error:
+        HTTPabort(400, error)
+    no_secrets = cfg.get_secrets(secrets_data, get_db=False)
+    return HTTPanswer(200, {"Not updated": no_secrets})
 
 
 @router.put("/secrets", dependencies=[Depends(login_admin_required)])

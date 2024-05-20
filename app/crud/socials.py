@@ -1,6 +1,9 @@
 import asyncio
 
+from common.config import cfg
 from common.errors import HTTPabort
+from common.utils import get_logger, levelDEBUG, levelINFO
+from db.common import get_model_dict
 from db.models import SCHEMA, Socials
 from schemas import socials as schema_socials
 from sqlalchemy import delete, select, update
@@ -10,6 +13,7 @@ from sqlalchemy.sql import text
 
 class SocialsData:
     def __init__(self) -> None:
+        self.logger = get_logger(levelDEBUG if cfg.ENV == "dev" else levelINFO)
         self.data = {}
         self.links = set()
         self.sorted_list = []
@@ -19,17 +23,10 @@ class SocialsData:
         async with session.begin():
             db_data = await session.scalars(select(Socials))
             for row in db_data:
-                self.data[row.id] = {
-                    "id": row.id,
-                    "name": row.name,
-                    "link": row.link,
-                    "icon": row.icon,
-                    "type": row.type,
-                    "order": row.order,
-                }
+                self.data[row.id] = get_model_dict(row)
                 self.links.add(row.link)
         self.resort()
-        print("INFO:\t  Socials info was loaded to memory")
+        self.logger.info("Socials info was loaded to memory")
 
     async def reset(self, session: AsyncSession) -> None:
         async with self.lock:
@@ -75,23 +72,17 @@ class SocialsData:
                     element.order = len(self.data) + 1
 
                 async with session.begin():
-                    new_social = {
-                        "name": element.name,
-                        "link": element.link,
-                        "icon": element.icon,
-                        "type": element.type,
-                        "order": element.order,
-                    }
-                    new_element = Socials(**new_social)
-                    session.add(new_element)
+                    dicted_element = element.model_dump()
+                    new_social = Socials(**dicted_element)
+                    session.add(new_social)
                     await session.flush()
-                    await session.refresh(new_element)
+                    await session.refresh(new_social)
 
-                    new_social["id"] = new_element.id
-                    self.data[new_element.id] = new_social
+                    dicted_element["id"] = new_social.id
+                    self.data[new_social.id] = dicted_element
                     self.links.add(element.link)
 
-                    inserted_ids.append(new_element.id)
+                    inserted_ids.append(new_social.id)
                     inserted_elements_count += 1
             if not inserted_elements_count:
                 HTTPabort(409, "Elements already exist")

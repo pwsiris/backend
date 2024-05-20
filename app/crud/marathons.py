@@ -2,7 +2,10 @@ import asyncio
 from copy import deepcopy
 
 import httpx
+from common.config import cfg
 from common.errors import HTTPabort
+from common.utils import get_logger, levelDEBUG, levelINFO
+from db.common import get_model_dict
 from db.models import SCHEMA, Marathons
 from schemas import marathons as marathons_games
 from sqlalchemy import delete, select, update
@@ -12,6 +15,7 @@ from sqlalchemy.sql import text
 
 class MarathonsData:
     def __init__(self) -> None:
+        self.logger = get_logger(levelDEBUG if cfg.ENV == "dev" else levelINFO)
         self.data = {}
         self.sorted_list = []
         self.lock = asyncio.Lock()
@@ -20,21 +24,9 @@ class MarathonsData:
         async with session.begin():
             db_data = await session.scalars(select(Marathons))
             for row in db_data:
-                self.data[row.id] = {
-                    "id": row.id,
-                    "name": row.name,
-                    "description": row.description,
-                    "comment": row.comment,
-                    "status": row.status,
-                    "picture": row.picture,
-                    "records": row.records,
-                    "order": row.order,
-                    "link": row.link,
-                    "marathon_id": row.marathon_id,
-                    "steam_id": row.steam_id,
-                }
+                self.data[row.id] = get_model_dict(row)
         self.resort()
-        print("INFO:\t  Marathons info was loaded to memory")
+        self.logger.info("Marathons info was loaded to memory")
 
     async def reset(self, session: AsyncSession) -> None:
         async with self.lock:
@@ -101,9 +93,9 @@ class MarathonsData:
                             result["picture"] = template
                             break
                 if not result.get("picture"):
-                    print(f"No valid pic for steam-game {steam_id}")
+                    self.logger.warning(f"No valid pic for steam-game {steam_id}")
             except Exception:
-                print(f"Error getting steam-game {steam_id} pic")
+                self.logger.warning(f"Error getting steam-game {steam_id} pic")
         return result
 
     async def add(
@@ -154,27 +146,20 @@ class MarathonsData:
 
                 additional_info = await self.check_steam(element.steam_id)
                 async with session.begin():
-                    new_marathon_entity = {
-                        "name": element.name,
-                        "description": element.description,
-                        "comment": element.comment,
-                        "status": element.status,
-                        "picture": additional_info.get("picture") or element.picture,
-                        "records": element.records,
-                        "order": element.order,
-                        "link": additional_info.get("link") or element.link,
-                        "marathon_id": element.marathon_id,
-                        "steam_id": element.steam_id,
-                    }
-                    new_element = Marathons(**new_marathon_entity)
-                    session.add(new_element)
+                    dicted_element = element.model_dump()
+                    if dicted_element["link"] is None:
+                        dicted_element["link"] = additional_info.get("link")
+                    if dicted_element["picture"] is None:
+                        dicted_element["picture"] = additional_info.get("picture")
+                    new_marathon_entity = Marathons(**dicted_element)
+                    session.add(new_marathon_entity)
                     await session.flush()
-                    await session.refresh(new_element)
+                    await session.refresh(new_marathon_entity)
 
-                    new_marathon_entity["id"] = new_element.id
-                    self.data[new_element.id] = new_marathon_entity
+                    dicted_element["id"] = new_marathon_entity.id
+                    self.data[new_marathon_entity.id] = dicted_element
 
-                    inserted_ids.append(new_element.id)
+                    inserted_ids.append(new_marathon_entity.id)
             self.resort()
             return inserted_ids
 

@@ -4,6 +4,8 @@ from datetime import datetime, timezone
 import httpx
 from common.config import cfg
 from common.errors import HTTPabort
+from common.utils import get_logger, levelDEBUG, levelINFO
+from db.common import get_model_dict
 from db.models import SCHEMA, Anime
 from fastapi.encoders import jsonable_encoder
 from schemas import anime as schema_anime
@@ -17,6 +19,7 @@ UNIX_BELOW_ZERO = datetime.fromisoformat("1969-12-31 23:59:59+00:00")
 
 class AnimeData:
     def __init__(self) -> None:
+        self.logger = get_logger(levelDEBUG if cfg.ENV == "dev" else levelINFO)
         self.data = {}
         self.sorted_list = []
         self.lock = asyncio.Lock()
@@ -41,24 +44,9 @@ class AnimeData:
             for row in db_data:
                 if row.id > self.non_mal_border and row.id > self.non_mal_anime:
                     self.non_mal_anime = row.id
-                self.data[row.id] = {
-                    "id": row.id,
-                    "name": row.name,
-                    "link": row.link,
-                    "type": row.type,
-                    "episodes": row.episodes,
-                    "picture": row.picture,
-                    "score": row.score,
-                    "status": row.status,
-                    "added_time": row.added_time,
-                    "completed_time": row.completed_time,
-                    "voice_acting": row.voice_acting,
-                    "comment": row.comment,
-                    "order_by": row.order_by,
-                    "series": row.series,
-                }
+                self.data[row.id] = get_model_dict(row)
         self.resort()
-        print("INFO:\t  Anime info was loaded to memory")
+        self.logger.info("Anime info was loaded to memory")
 
     async def reset(self, session: AsyncSession) -> None:
         async with self.lock:
@@ -86,12 +74,12 @@ class AnimeData:
                         details = str(response.json())
                     except Exception:
                         pass
-                    print(
+                    self.logger.warning(
                         f"Error getting anime {id} info. Code: {response.status_code}, Details: {details}."
                     )
                     return {}
         except Exception:
-            print(f"Error getting anime {id} info from MAL api")
+            self.logger.warning(f"Error getting anime {id} info from MAL api")
             return {}
 
         try:
@@ -105,7 +93,7 @@ class AnimeData:
                 "episodes": anime_info["num_episodes"],
             }
         except Exception:
-            print(f"Error getting anime {id} details from API response")
+            self.logger.warning(f"Error getting anime {id} details from API response")
             return {}
 
     def resort(self) -> None:
@@ -224,33 +212,27 @@ class AnimeData:
                     continue
                 additional_info = await self.get_anime_mal_info(element.id)
                 async with session.begin():
-                    new_anime = {
-                        "id": element.id,
-                        "name": element.name,
-                        "link": element.link or additional_info.get("link"),
-                        "type": element.type or additional_info.get("type"),
-                        "episodes": element.episodes or additional_info.get("episodes"),
-                        "picture": element.picture or additional_info.get("picture"),
-                        "score": element.score,
-                        "status": element.status,
-                        "added_time": (
-                            (element.added_time or datetime.now(timezone.utc))
-                            if element.added_time != UNIX_BELOW_ZERO
-                            else None
-                        ),
-                        "completed_time": (
-                            (element.completed_time or datetime.now(timezone.utc))
-                            if element.status == "Просмотрено"
-                            else None
-                        ),
-                        "voice_acting": element.voice_acting,
-                        "comment": element.comment,
-                        "order_by": element.order_by,
-                        "series": element.series,
-                    }
-                    new_element = Anime(**new_anime)
-                    session.add(new_element)
-                    self.data[element.id] = new_anime
+                    dicted_element = element.model_dump()
+
+                    for key in ("link", "type", "episodes", "picture"):
+                        if dicted_element[key] is None:
+                            dicted_element[key] = additional_info.get(key)
+
+                    dicted_element["added_time"] = (
+                        (dicted_element["added_time"] or datetime.now(timezone.utc))
+                        if dicted_element["added_time"] != UNIX_BELOW_ZERO
+                        else None
+                    )
+                    dicted_element["completed_time"] = (
+                        (dicted_element["completed_time"] or datetime.now(timezone.utc))
+                        if dicted_element["status"] in ("Просмотрено", "Заброшено")
+                        else None
+                    )
+
+                    new_anime = Anime(**dicted_element)
+                    session.add(new_anime)
+                    self.data[element.id] = dicted_element
+
                     inserted_ids.append(element.id)
                     inserted_elements_count += 1
             if not inserted_elements_count:

@@ -4,10 +4,13 @@ from datetime import datetime
 import httpx
 from common.all_data import all_data
 from common.config import cfg
-from db.utils import get_session
+from common.utils import get_logger, levelDEBUG, levelINFO
+from db.common import get_session
 from fastapi import APIRouter, Depends, Query
 
 from . import PlainAnswer, verify_twitchbot_token
+
+logger = get_logger(levelDEBUG if cfg.ENV == "dev" else levelINFO)
 
 
 def list_get(list, index):
@@ -46,8 +49,8 @@ async def timecode(
             json["embeds"][0]["description"] = description
         answer = await ac.post(cfg.DISCORD_HOOK_TIMECODE, json=json)
         if answer.status_code < 200 or answer.status_code >= 300:
-            print(answer.status_code)
-            print(answer.content)
+            logger.error(answer.status_code)
+            logger.error(answer.content)
             message = (
                 f"Failed to send stream timecode to discord (code {answer.status_code})"
             )

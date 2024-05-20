@@ -1,6 +1,9 @@
 import asyncio
 
+from common.config import cfg
 from common.errors import HTTPabort
+from common.utils import get_logger, levelDEBUG, levelINFO
+from db.common import get_model_dict
 from db.models import SCHEMA, Challenges
 from schemas import challenges as schema_challenges
 from sqlalchemy import delete, select, update
@@ -10,6 +13,7 @@ from sqlalchemy.sql import text
 
 class ChallengesData:
     def __init__(self) -> None:
+        self.logger = get_logger(levelDEBUG if cfg.ENV == "dev" else levelINFO)
         self.data = {}
         self.lists = {}
         self.lock = asyncio.Lock()
@@ -24,20 +28,9 @@ class ChallengesData:
         async with session.begin():
             db_data = await session.scalars(select(Challenges))
             for row in db_data:
-                self.data[row.id] = {
-                    "id": row.id,
-                    "name": row.name,
-                    "picture": row.picture,
-                    "order_by": row.order_by,
-                    "description": row.description,
-                    "comment": row.comment,
-                    "status": row.status,
-                    "type": row.type,
-                    "price": row.price,
-                    "records": row.records,
-                }
+                self.data[row.id] = get_model_dict(row)
         self.resort()
-        print("INFO:\t  Challenges info was loaded to memory")
+        self.logger.info("Challenges info was loaded to memory")
 
     async def reset(self, session: AsyncSession) -> None:
         async with self.lock:
@@ -79,24 +72,14 @@ class ChallengesData:
             inserted_ids = []
             for element in elements:
                 async with session.begin():
-                    new_challenge = {
-                        "name": element.name,
-                        "picture": element.picture,
-                        "order_by": element.order_by,
-                        "description": element.description,
-                        "comment": element.comment,
-                        "status": element.status,
-                        "type": element.type,
-                        "price": element.price,
-                        "records": element.records,
-                    }
-                    new_element = Challenges(**new_challenge)
-                    session.add(new_element)
+                    dicted_element = element.model_dump()
+                    new_challenge = Challenges(**dicted_element)
+                    session.add(new_challenge)
                     await session.flush()
-                    await session.refresh(new_element)
-                    new_challenge["id"] = new_element.id
-                    self.data[new_element.id] = new_challenge
-                    inserted_ids.append(new_element.id)
+                    await session.refresh(new_challenge)
+                    dicted_element["id"] = new_challenge.id
+                    self.data[new_challenge.id] = dicted_element
+                    inserted_ids.append(new_challenge.id)
                     inserted_elements_count += 1
             if not inserted_elements_count:
                 HTTPabort(409, "Elements already exist")
