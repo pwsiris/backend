@@ -39,15 +39,6 @@ async def lifespan_function(FastAPP: FastAPI):
 
     FastAPP.include_router(routers.routers, prefix="/api")
 
-    if cfg.ENV == "dev":
-        FastAPP.add_middleware(
-            CORSMiddleware,
-            allow_origin_regex=".*localhost:.*",
-            allow_credentials=True,
-            allow_methods=["*"],
-            allow_headers=["*"],
-        )
-
     yield
 
     await _engine.dispose()
@@ -62,3 +53,12 @@ FastAPP = FastAPI(
     # docs_url="/api/docs",
     # redoc_url="/api/redoc",
 )
+
+if cfg.ENV == "dev":
+    FastAPP.add_middleware(
+        CORSMiddleware,
+        allow_origin_regex=".*localhost:.*",
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
