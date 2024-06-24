@@ -23,6 +23,7 @@ class NewElement(BaseModel):
     type: str | None = None
     records: list[Records] | None = None
     comment: str | None = None
+    gift_by: str | None = None
     order_by: str | None = None
 
     link: str | None = None
@@ -45,6 +46,7 @@ class UpdatedElement(BaseModel):
     type: str | None = None
     records: list[Records] | None = None
     comment: str | None = None
+    gift_by: str | None = None
     order_by: str | None = None
 
 

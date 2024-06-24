@@ -87,6 +87,7 @@ class Games(Base):
     type: Mapped[str] = mapped_column(nullable=True)
     records: Mapped[list[dict[str, str | int]]] = mapped_column(JSON, nullable=True)
     comment: Mapped[str] = mapped_column(nullable=True)
+    gift_by: Mapped[str] = mapped_column(nullable=True)
     order_by: Mapped[str] = mapped_column(nullable=True)
 
 
