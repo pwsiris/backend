@@ -36,6 +36,7 @@ class GamesData:
                     "type": row.type,
                     "records": row.records,
                     "comment": row.comment,
+                    "gift_by": row.gift_by,
                     "order_by": row.order_by,
                 }
         self.resort()
@@ -142,6 +143,7 @@ class GamesData:
                         if element.records
                         else None,
                         "comment": element.comment,
+                        "gift_by": element.gift_by,
                         "order_by": element.order_by,
                     }
                     new_element = Games(**new_game)
