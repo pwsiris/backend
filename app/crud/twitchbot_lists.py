@@ -2,7 +2,9 @@ import asyncio
 import random
 from datetime import datetime
 
+from common.config import cfg
 from common.errors import HTTPabort
+from common.utils import get_logger, levelDEBUG, levelINFO
 from db.models import SCHEMA, TwitchBotLists
 from schemas import twitchbot
 from sqlalchemy import delete, select, update
@@ -12,6 +14,7 @@ from sqlalchemy.sql import text
 
 class TwitchBotList:
     def __init__(self, category: str) -> None:
+        self.logger = get_logger(levelDEBUG if cfg.ENV == "dev" else levelINFO)
         self.data = {}
         self.category = category
         self.lock = asyncio.Lock()
@@ -26,7 +29,7 @@ class TwitchBotList:
             )
             self.data = {element.id: element.value for element in db_data}
 
-        print(f"INFO:\t  TwitchBot {self.category} info was loaded to memory")
+        self.logger.info(f"TwitchBot {self.category} info was loaded to memory")
 
     async def reset(self, session: AsyncSession) -> None:
         async with self.lock:

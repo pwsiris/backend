@@ -2,6 +2,8 @@ import asyncio
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
+from common.config import cfg
+from common.utils import get_logger, levelDEBUG, levelINFO
 from db.models import SCHEMA, TwitchBotCounters
 from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,6 +12,7 @@ from sqlalchemy.sql import text
 
 class TwitchBotCounter:
     def __init__(self, counter_type: str) -> None:
+        self.logger = get_logger(levelDEBUG if cfg.ENV == "dev" else levelINFO)
         self.data = {}
         self.type = counter_type
         self.lock = asyncio.Lock()
@@ -24,7 +27,7 @@ class TwitchBotCounter:
                 for element in db_data
             }
 
-        print(f"INFO:\t  TwitchBot {self.type} counter info was loaded to memory")
+        self.logger.info(f"TwitchBot {self.type} counter info was loaded to memory")
 
     async def reset(self, session: AsyncSession) -> None:
         async with self.lock:
