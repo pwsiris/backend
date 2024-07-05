@@ -18,24 +18,7 @@ async def lifespan_function(FastAPP: FastAPI):
     await check_db(logger)
 
     async with AsyncSession(_engine, expire_on_commit=False) as session:
-        await all_data.SAVE_CHOICES.setup(session)
-
-        await all_data.BITE_IGNORE_LIST.setup(session)
-        await all_data.BITE_ACTIONS.setup(session)
-        await all_data.BITE_PLACES.setup(session)
-        await all_data.BITE_BODY_PARTS.setup(session)
-
-        await all_data.COUNTER.setup(session)
-        await all_data.COUNTER_DEATH.setup(session)
-        await all_data.COUNTER_GLOBAL.setup(session)
-
-        await all_data.ANIME.setup(session)
-        await all_data.CHALLENGES.setup(session)
-        await all_data.GAMES.setup(session)
-        await all_data.LORE.setup(session)
-        await all_data.MARATHONS.setup(session)
-        await all_data.ROULETTE.setup(session)
-        await all_data.SOCIALS.setup(session)
+        await all_data.setup(session)
 
     FastAPP.include_router(routers.routers, prefix="/api")
 
