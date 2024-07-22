@@ -354,18 +354,21 @@ class AnimeData:
             result = {"all": len(self.data), "people": {}}
             by_customers = {}
             for anime in self.data.values():
-                customers = anime["order_by"].split("+")
+                customers = (anime["order_by"] or cfg.STREAMER).split("+")
                 for customer in customers:
                     if customer not in by_customers:
                         by_customers[customer] = {
                             "list": [],
                             "count": 0,
                         }
+                    status = f"({anime['status']})" if anime["status"] else ""
                     by_customers[customer]["list"].append(
-                        (f"{anime['series'] or ''} {anime['name']}").lstrip()
+                        (f"{anime['series'] or ''} {anime['name']} {status}").strip()
                     )
                     by_customers[customer]["count"] += 1
             for customer, info in by_customers.items():
-                by_customers[customer]["list"] = sorted(info["list"])
+                by_customers[customer]["list"] = sorted(
+                    info["list"], key=lambda anime: anime.lower()
+                )
             result["people"] = by_customers
             return result

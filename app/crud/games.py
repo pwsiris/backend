@@ -76,7 +76,11 @@ class GamesData:
 
         for game_type, games in typed_games.items():
             typed_games[game_type] = sorted(
-                games, key=lambda game: (game["subname"] or game["name"], game["name"])
+                games,
+                key=lambda game: (
+                    (game["subname"] or game["name"]).lower(),
+                    game["name"].lower(),
+                ),
             )
 
         for game_type, genres in typed_genres.items():
@@ -269,3 +273,78 @@ class GamesData:
                 HTTPabort(404, "No elements to update")
             self.resort()
             return update_info
+
+    async def get_customers(self) -> list:
+        async with self.lock:
+            result = {
+                "all": 0,
+                "gifts": 0,
+                "orders": 0,
+                "gifts+orders": 0,
+                "non-unique games": [],
+                "people": {},
+            }
+            by_customers = {}
+            for game in self.data.values():
+                gift_by = (
+                    [customer.strip() for customer in game["gift_by"].split("+")]
+                    if game["gift_by"]
+                    else []
+                )
+                order_by = (
+                    [customer.strip() for customer in game["order_by"].split("+")]
+                    if game["order_by"]
+                    else []
+                )
+                customers = set(gift_by + order_by)
+                if customers:
+                    result["all"] += 1
+
+                status = f"({game['status']})" if game["status"] else ""
+                if len(customers) > 1:
+                    result["non-unique games"].append(
+                        f"{game['name']} {status}".strip()
+                    )
+
+                if (
+                    game["gift_by"]
+                    and game["order_by"]
+                    and game["gift_by"] != game["order_by"]
+                ):
+                    print(game["name"], game["gift_by"], game["order_by"])
+
+                for customer in customers:
+                    if customer not in by_customers:
+                        by_customers[customer] = {
+                            "gifts": {"list": [], "count": 0},
+                            "orders": {"list": [], "count": 0},
+                            "gifts+orders": {"list": [], "count": 0},
+                            "count": 0,
+                        }
+                    if customer in gift_by and customer in order_by:
+                        category = "gifts+orders"
+                    elif customer in gift_by:
+                        category = "gifts"
+                    elif customer in order_by:
+                        category = "orders"
+
+                    by_customers[customer][category]["list"].append(
+                        f"{game['name']} {status}".strip()
+                    )
+                    by_customers[customer][category]["count"] += 1
+                    by_customers[customer]["count"] += 1
+
+            result["all"] = f"{result['all']} / {len(self.data)}"
+            result["non-unique games"] = sorted(
+                result["non-unique games"], key=lambda game: game.lower()
+            )
+
+            for customer, info in by_customers.items():
+                for category in ("gifts", "orders", "gifts+orders"):
+                    by_customers[customer][category]["list"] = sorted(
+                        info[category]["list"], key=lambda game: game.lower()
+                    )
+                    result[category] += by_customers[customer][category]["count"]
+            result["people"] = by_customers
+
+            return result
