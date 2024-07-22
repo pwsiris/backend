@@ -79,3 +79,8 @@ async def update_genres(
 async def reset_games(session=Depends(get_session)):
     await all_data.GAMES.reset(session)
     return HTTPanswer(200, "Games were erased")
+
+
+@router.get("/customers", dependencies=[Depends(login_admin_required)])
+async def games_customers():
+    return HTTPanswer(200, await all_data.GAMES.get_customers())
