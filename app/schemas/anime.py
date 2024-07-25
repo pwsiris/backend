@@ -8,7 +8,7 @@ class NewElement(BaseModel):
     name: str
     comment: str | None = None
     voice_acting: str | None = None
-    order_by: str
+    order_by: str | None = None
     series: str | None = None
     score: int | None = None
     status: str | None = None
