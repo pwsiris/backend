@@ -1,7 +1,10 @@
 import asyncio
 import re
 
+from common.config import cfg
 from common.errors import HTTPabort
+from common.utils import get_logger, levelDEBUG, levelINFO
+from db.common import get_model_dict
 from db.models import SCHEMA, RouletteAwards
 from schemas import roulette as schema_roulette
 from sqlalchemy import delete, select, update
@@ -11,6 +14,7 @@ from sqlalchemy.sql import text
 
 class RouletteData:
     def __init__(self) -> None:
+        self.logger = get_logger(levelDEBUG if cfg.ENV == "dev" else levelINFO)
         self.data = {}
         self.awards = set()
         self.rarities = []
@@ -22,15 +26,10 @@ class RouletteData:
         async with session.begin():
             db_data = await session.scalars(select(RouletteAwards))
             for row in db_data:
-                self.data[row.id] = {
-                    "id": row.id,
-                    "name": row.name,
-                    "rarity": row.rarity,
-                    "description": row.description,
-                }
+                self.data[row.id] = get_model_dict(row)
                 self.awards.add(row.name)
         self.resort()
-        print("INFO:\t  Roulette info was loaded to memory")
+        self.logger.info("Roulette info was loaded to memory")
 
     async def reset(self, session: AsyncSession) -> None:
         async with self.lock:
@@ -84,17 +83,17 @@ class RouletteData:
                     continue
 
                 async with session.begin():
-                    new_award = element.model_dump()
-                    new_element = RouletteAwards(**new_award)
-                    session.add(new_element)
+                    dicted_element = element.model_dump()
+                    new_award = RouletteAwards(**dicted_element)
+                    session.add(new_award)
                     await session.flush()
-                    await session.refresh(new_element)
+                    await session.refresh(new_award)
 
-                    new_award["id"] = new_element.id
-                    self.data[new_element.id] = new_award
+                    dicted_element["id"] = new_award.id
+                    self.data[new_award.id] = dicted_element
                     self.awards.add(element.name)
 
-                    inserted_ids.append(new_element.id)
+                    inserted_ids.append(new_award.id)
                     inserted_elements_count += 1
             if not inserted_elements_count:
                 HTTPabort(409, "Elements already exist")

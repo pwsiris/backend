@@ -1,5 +1,5 @@
 from common.all_data import all_data
-from db.utils import get_session
+from db.common import get_session
 from fastapi import APIRouter, Depends
 from schemas import roulette as schema_roulette
 

@@ -4,5 +4,6 @@ fastapi
 httpx
 psycopg2-binary
 pyyaml
+requests
 SQLAlchemy
 uvicorn

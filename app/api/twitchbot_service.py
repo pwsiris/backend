@@ -1,6 +1,6 @@
 from common.all_data import all_data
 from common.errors import HTTPabort
-from db.utils import get_session
+from db.common import get_session
 from fastapi import APIRouter, Depends
 from schemas import twitchbot as schema_twitchbot
 
