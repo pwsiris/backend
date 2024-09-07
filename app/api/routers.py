@@ -6,6 +6,7 @@ from .challenges import router as challenges_router
 from .games import router as games_router
 from .lore import router as lore_router
 from .marathons import router as marathons_router
+from .merch import router as merch_router
 from .roulette import router as roulette_router
 from .socials import router as socials_router
 from .twitchbot import router as twitchbot_router
@@ -19,6 +20,7 @@ routers.include_router(challenges_router, prefix="/challenges")
 routers.include_router(games_router, prefix="/games")
 routers.include_router(lore_router, prefix="/lore")
 routers.include_router(marathons_router, prefix="/marathons")
+routers.include_router(merch_router, prefix="/merch")
 routers.include_router(roulette_router, prefix="/roulette")
 routers.include_router(socials_router, prefix="/socials")
 routers.include_router(twitchbot_router, prefix="/twitchbot")

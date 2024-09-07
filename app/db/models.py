@@ -123,3 +123,18 @@ class RouletteAwards(Base):
     name: Mapped[str] = mapped_column(nullable=False, unique=True)
     rarity: Mapped[str] = mapped_column(nullable=False)
     description: Mapped[str] = mapped_column(nullable=True)
+
+
+class Merch(Base):
+    __tablename__ = "merch"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(nullable=False)
+    description: Mapped[str] = mapped_column(nullable=True)
+    price: Mapped[str] = mapped_column(nullable=True)
+    status: Mapped[str] = mapped_column(nullable=True)
+    creator_name: Mapped[str] = mapped_column(nullable=True)
+    creator_link: Mapped[str] = mapped_column(nullable=True)
+    picture: Mapped[str] = mapped_column(nullable=True)
+    picture_size: Mapped[str] = mapped_column(nullable=True)
+    order: Mapped[int] = mapped_column(nullable=False)
