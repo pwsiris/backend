@@ -3,6 +3,7 @@ from crud.challenges import ChallengesData
 from crud.games import GamesData
 from crud.lore import LoreData
 from crud.marathons import MarathonsData
+from crud.merch import MerchData
 from crud.roulette import RouletteData
 from crud.socials import SocialsData
 from crud.twitchbot_counters import TwitchBotCounter
@@ -32,6 +33,7 @@ class AllData:
         self.GAMES = GamesData()
         self.LORE = LoreData()
         self.MARATHONS = MarathonsData()
+        self.MERCH = MerchData()
         self.ROULETTE = RouletteData()
         self.SOCIALS = SocialsData()
 

@@ -65,6 +65,7 @@ async def lifespan_function(FastAPP: FastAPI):
         await all_data.GAMES.setup(session)
         await all_data.LORE.setup(session)
         await all_data.MARATHONS.setup(session)
+        await all_data.MERCH.setup(session)
         await all_data.ROULETTE.setup(session)
         await all_data.SOCIALS.setup(session)
 
