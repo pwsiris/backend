@@ -111,6 +111,7 @@ class ConfigManager:
             self.AUTH_TOKEN_KEY = auth_data["token_key"]
             self.AUTH_TOKEN_EXPIRE = auth_data["expire"]
             self.AUTH_ADMIN_TMP_TOKEN = auth_data["admin_tmp_token"]
+            self.AUTH_SITE_MESSAGES_TMP_TOKEN = auth_data["site_messages_tmp_token"]
         else:
             print("No auth data in secrets")
             if initial:
@@ -155,6 +156,7 @@ class ConfigManager:
         discord_data = secrets_data.get(f"{self.ENV}/discord")
         if discord_data:
             self.DISCORD_HOOK_TIMECODE = discord_data["hook_timecode"]
+            self.DISCORD_HOOK_SITE_MESSAGES = discord_data["hook_site_messages"]
         else:
             print("No discord data in secrets")
             if initial:
