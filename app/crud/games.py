@@ -98,6 +98,7 @@ class GamesData:
                     f"https://cdn.akamai.steamstatic.com/steam/apps/{steam_id}/capsule_616x353.jpg",
                     f"https://cdn.akamai.steamstatic.com/steam/apps/{steam_id}/header.jpg",
                     f"https://cdn.cloudflare.steamstatic.com/steam/apps/{steam_id}/header.jpg",
+                    f"https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/{steam_id}/header.jpg",
                 ]
                 for template in templates:
                     async with httpx.AsyncClient() as ac:
