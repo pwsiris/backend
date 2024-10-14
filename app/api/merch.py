@@ -60,3 +60,14 @@ async def delete_merch(
 async def reset_merch(session=Depends(get_session)):
     await all_data.MERCH.reset(session)
     return HTTPanswer(200, "Merch was erased")
+
+
+@router.put("/status", dependencies=[Depends(login_admin_required)])
+async def change_status_merch(status: schema_merch.Status):
+    all_data.MERCH.set_status(status.status)
+    return HTTPanswer(200, "Merch status was updated")
+
+
+@router.get("/status")
+async def get_status_merch():
+    return HTTPanswer(200, all_data.MERCH.get_status())

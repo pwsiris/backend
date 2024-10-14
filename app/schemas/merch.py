@@ -28,3 +28,7 @@ class UpdatedElement(BaseModel):
 
 class DeletedElement(BaseModel):
     id: int
+
+
+class Status(BaseModel):
+    status: str
