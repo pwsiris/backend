@@ -1,7 +1,7 @@
 from common.all_data import all_data
 from db.utils import get_session
 from fastapi import APIRouter, Depends
-from schemas import marathons as marathons_games
+from schemas import marathons as schema_marathons
 
 from . import HTTPanswer, login_admin_required
 
@@ -17,7 +17,7 @@ async def get_marathons():
 @router.post("", dependencies=[Depends(login_admin_required)])
 @router.post("/", dependencies=[Depends(login_admin_required)])
 async def add_marathons(
-    elements: list[marathons_games.NewElement],
+    elements: list[schema_marathons.NewElement],
     session=Depends(get_session),
 ):
     return HTTPanswer(
@@ -29,7 +29,7 @@ async def add_marathons(
 @router.put("", dependencies=[Depends(login_admin_required)])
 @router.put("/", dependencies=[Depends(login_admin_required)])
 async def update_marathons(
-    elements: list[marathons_games.UpdatedElement],
+    elements: list[schema_marathons.UpdatedElement],
     session=Depends(get_session),
 ):
     return HTTPanswer(
@@ -44,7 +44,7 @@ async def update_marathons(
 @router.delete("", dependencies=[Depends(login_admin_required)])
 @router.delete("/", dependencies=[Depends(login_admin_required)])
 async def delete_marathons(
-    elements: list[marathons_games.DeletedElement],
+    elements: list[schema_marathons.DeletedElement],
     session=Depends(get_session),
 ):
     return HTTPanswer(

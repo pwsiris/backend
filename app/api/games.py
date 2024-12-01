@@ -61,7 +61,7 @@ async def get_genres(genre: str = Query("")):
     return HTTPanswer(200, await all_data.GAMES.get_genres(genre))
 
 
-@router.put("/genres")
+@router.put("/genres", dependencies=[Depends(login_admin_required)])
 async def update_genres(
     elements: list[schema_games.UpdatedGenre],
     session=Depends(get_session),

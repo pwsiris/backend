@@ -14,6 +14,10 @@ class AllData:
     def __init__(self) -> None:
         self.TIMECODE_MESSAGE = "Saved"
 
+        self.SITE_MESSAGES_ENABLED = False
+        self.SITE_MESSAGES_TITLE_TEXT = ""
+        self.SITE_MESSAGES_TITLE_EDITABLE = False
+
         self.SAVE_CHOICES = TwitchBotList("saves")
 
         self.BITE_CHEAT_STREAMER_PERCENT = 0
