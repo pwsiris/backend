@@ -1,7 +1,13 @@
 import asyncio
+from datetime import date as ddate
+from datetime import datetime
+from datetime import time as dtime
 
+from common.config import cfg
 from common.errors import HTTPabort
+from db.common import get_model_dict
 from db.models import SCHEMA, Challenges
+from fastapi.encoders import jsonable_encoder
 from schemas import challenges as schema_challenges
 from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -24,20 +30,9 @@ class ChallengesData:
         async with session.begin():
             db_data = await session.scalars(select(Challenges))
             for row in db_data:
-                self.data[row.id] = {
-                    "id": row.id,
-                    "name": row.name,
-                    "picture": row.picture,
-                    "order_by": row.order_by,
-                    "description": row.description,
-                    "comment": row.comment,
-                    "status": row.status,
-                    "type": row.type,
-                    "price": row.price,
-                    "records": row.records,
-                }
+                self.data[row.id] = get_model_dict(row)
         self.resort()
-        print("INFO:\t  Challenges info was loaded to memory")
+        cfg.logger.info("Challenges info was loaded to memory")
 
     async def reset(self, session: AsyncSession) -> None:
         async with self.lock:
@@ -79,24 +74,17 @@ class ChallengesData:
             inserted_ids = []
             for element in elements:
                 async with session.begin():
-                    new_challenge = {
-                        "name": element.name,
-                        "picture": element.picture,
-                        "order_by": element.order_by,
-                        "description": element.description,
-                        "comment": element.comment,
-                        "status": element.status,
-                        "type": element.type,
-                        "price": element.price,
-                        "records": element.records,
-                    }
-                    new_element = Challenges(**new_challenge)
-                    session.add(new_element)
+                    dicted_element = element.model_dump()
+
+                    new_challenge = Challenges(**dicted_element)
+                    session.add(new_challenge)
                     await session.flush()
-                    await session.refresh(new_element)
-                    new_challenge["id"] = new_element.id
-                    self.data[new_element.id] = new_challenge
-                    inserted_ids.append(new_element.id)
+                    await session.refresh(new_challenge)
+
+                    dicted_element["id"] = new_challenge.id
+                    self.data[new_challenge.id] = dicted_element
+
+                    inserted_ids.append(new_challenge.id)
                     inserted_elements_count += 1
             if not inserted_elements_count:
                 HTTPabort(409, "Elements already exist")
@@ -155,7 +143,38 @@ class ChallengesData:
             self.resort()
             return update_info
 
-    async def get_all(self, types: list[str]) -> dict:
+    async def get_all(self, raw: bool, types: list[str] = []) -> dict | list:
+        if raw:
+            async with self.lock:
+                result = []
+                for item in self.data.values():
+                    item_record = {}
+                    for tag in (
+                        "id",
+                        "name",
+                        "picture",
+                        "order_by",
+                        "description",
+                        "comment",
+                        "status",
+                        "type",
+                        "price",
+                        "records",
+                    ):
+                        if item[tag]:
+                            item_record[tag] = item[tag]
+                    result.append(item_record)
+
+                return jsonable_encoder(
+                    result,
+                    custom_encoder={
+                        datetime: lambda datetime_obj: (
+                            datetime_obj.isoformat()
+                        ).replace("T", " "),
+                        ddate: lambda date_obj: (date_obj.isoformat()),
+                        dtime: lambda time_obj: (time_obj.isoformat()),
+                    },
+                )
         if types:
             result = {}
             for type in types:

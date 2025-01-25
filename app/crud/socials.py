@@ -1,7 +1,13 @@
 import asyncio
+from datetime import date as ddate
+from datetime import datetime
+from datetime import time as dtime
 
+from common.config import cfg
 from common.errors import HTTPabort
+from db.common import get_model_dict
 from db.models import SCHEMA, Socials
+from fastapi.encoders import jsonable_encoder
 from schemas import socials as schema_socials
 from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -19,17 +25,10 @@ class SocialsData:
         async with session.begin():
             db_data = await session.scalars(select(Socials))
             for row in db_data:
-                self.data[row.id] = {
-                    "id": row.id,
-                    "name": row.name,
-                    "link": row.link,
-                    "icon": row.icon,
-                    "type": row.type,
-                    "order": row.order,
-                }
+                self.data[row.id] = get_model_dict(row)
                 self.links.add(row.link)
         self.resort()
-        print("INFO:\t  Socials info was loaded to memory")
+        cfg.logger.info("Socials info was loaded to memory")
 
     async def reset(self, session: AsyncSession) -> None:
         async with self.lock:
@@ -75,23 +74,18 @@ class SocialsData:
                     element.order = len(self.data) + 1
 
                 async with session.begin():
-                    new_social = {
-                        "name": element.name,
-                        "link": element.link,
-                        "icon": element.icon,
-                        "type": element.type,
-                        "order": element.order,
-                    }
-                    new_element = Socials(**new_social)
-                    session.add(new_element)
-                    await session.flush()
-                    await session.refresh(new_element)
+                    dicted_element = element.model_dump()
 
-                    new_social["id"] = new_element.id
-                    self.data[new_element.id] = new_social
+                    new_social = Socials(**dicted_element)
+                    session.add(new_social)
+                    await session.flush()
+                    await session.refresh(new_social)
+
+                    dicted_element["id"] = new_social.id
+                    self.data[new_social.id] = dicted_element
                     self.links.add(element.link)
 
-                    inserted_ids.append(new_element.id)
+                    inserted_ids.append(new_social.id)
                     inserted_elements_count += 1
             if not inserted_elements_count:
                 HTTPabort(409, "Elements already exist")
@@ -200,5 +194,25 @@ class SocialsData:
             self.resort()
             return update_info
 
-    async def get_all(self) -> list[dict]:
+    async def get_all(self, raw: bool) -> list[dict]:
+        if raw:
+            async with self.lock:
+                result = []
+                for item in self.data.values():
+                    item_record = {}
+                    for tag in ("id", "name", "link", "icon", "type", "order"):
+                        if item[tag]:
+                            item_record[tag] = item[tag]
+                    result.append(item_record)
+
+                return jsonable_encoder(
+                    result,
+                    custom_encoder={
+                        datetime: lambda datetime_obj: (
+                            datetime_obj.isoformat()
+                        ).replace("T", " "),
+                        ddate: lambda date_obj: (date_obj.isoformat()),
+                        dtime: lambda time_obj: (time_obj.isoformat()),
+                    },
+                )
         return self.sorted_list

@@ -2,20 +2,12 @@ import random
 from datetime import datetime
 
 import httpx
+from api.answers import PlainAnswer
+from api.verification import verify_twitchbot_token
 from common.all_data import all_data
 from common.config import cfg
-from db.utils import get_session
+from db.common import get_session
 from fastapi import APIRouter, Depends, Query
-
-from . import PlainAnswer, verify_twitchbot_token
-
-
-def list_get(list, index):
-    if -1 < index < len(list):
-        return list[index]
-    else:
-        return None
-
 
 router = APIRouter()
 
@@ -40,14 +32,15 @@ async def timecode(
         }
         for prefix in ("!тк", "!tc", "!timecode"):
             description = description.replace(prefix, "")
+            description = description.replace(prefix.capitalize(), "")
             description = description.replace(prefix.upper(), "")
         description = description.lstrip(" ")
         if description:
             json["embeds"][0]["description"] = description
         answer = await ac.post(cfg.DISCORD_HOOK_TIMECODE, json=json)
         if answer.status_code < 200 or answer.status_code >= 300:
-            print(answer.status_code)
-            print(answer.content)
+            cfg.logger.error(answer.status_code)
+            cfg.logger.error(answer.content)
             message = (
                 f"Failed to send stream timecode to discord (code {answer.status_code})"
             )
@@ -97,6 +90,12 @@ async def counter(
     type: str,
     session=Depends(get_session),
 ):
+    def _list_get(list, index):
+        if -1 < index < len(list):
+            return list[index]
+        else:
+            return None
+
     name = name.lower()
 
     description = description.lstrip(" ").lower().split()[1:]
@@ -110,9 +109,9 @@ async def counter(
         counter = all_data.COUNTER
 
     if int(user_level) >= 500:  # moderators and upper in streamelements
-        if list_get(description, 0) in ("set", "установить"):
+        if _list_get(description, 0) in ("set", "установить"):
             try:
-                new_value = int(list_get(description, 1))
+                new_value = int(_list_get(description, 1))
                 result = await counter.set(session, name, new_value)
                 return PlainAnswer(f"{prefix}: {result}")
             except Exception:
@@ -121,14 +120,14 @@ async def counter(
     if (value := await counter.get_value(description_str, None)) != None:
         return PlainAnswer(f"{prefix} в {description_str}: {value}")
 
+    if _list_get(description, 0) in ("list", "список"):
+        return PlainAnswer(await counter.get_all())
+
     if await counter.get_value(name, None) == None:
         return PlainAnswer("Нет счётчика")
 
-    if list_get(description, 0) in ("current", "текущая"):
+    if _list_get(description, 0) in ("current", "текущая"):
         return PlainAnswer(f"{prefix} в {name}: {await counter.get_value(name, 'Нет')}")
-
-    if list_get(description, 0) in ("list", "список"):
-        return PlainAnswer(await counter.get_all())
 
     if description:
         return PlainAnswer("Ошибка в команде/названии/правах")

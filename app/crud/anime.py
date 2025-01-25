@@ -1,9 +1,13 @@
 import asyncio
-from datetime import datetime, timezone
+from datetime import date as ddate
+from datetime import datetime
+from datetime import time as dtime
+from datetime import timezone
 
 import httpx
 from common.config import cfg
 from common.errors import HTTPabort
+from db.common import get_model_dict
 from db.models import SCHEMA, Anime
 from fastapi.encoders import jsonable_encoder
 from schemas import anime as schema_anime
@@ -41,24 +45,9 @@ class AnimeData:
             for row in db_data:
                 if row.id > self.non_mal_border and row.id > self.non_mal_anime:
                     self.non_mal_anime = row.id
-                self.data[row.id] = {
-                    "id": row.id,
-                    "name": row.name,
-                    "link": row.link,
-                    "type": row.type,
-                    "episodes": row.episodes,
-                    "picture": row.picture,
-                    "score": row.score,
-                    "status": row.status,
-                    "added_time": row.added_time,
-                    "completed_time": row.completed_time,
-                    "voice_acting": row.voice_acting,
-                    "comment": row.comment,
-                    "order_by": row.order_by,
-                    "series": row.series,
-                }
+                self.data[row.id] = get_model_dict(row)
         self.resort()
-        print("INFO:\t  Anime info was loaded to memory")
+        cfg.logger.info("Anime info was loaded to memory")
 
     async def reset(self, session: AsyncSession) -> None:
         async with self.lock:
@@ -86,12 +75,12 @@ class AnimeData:
                         details = str(response.json())
                     except Exception:
                         pass
-                    print(
+                    cfg.logger.warning(
                         f"Error getting anime {id} info. Code: {response.status_code}, Details: {details}."
                     )
                     return {}
         except Exception:
-            print(f"Error getting anime {id} info from MAL api")
+            cfg.logger.warning(f"Error getting anime {id} info from MAL api")
             return {}
 
         try:
@@ -105,7 +94,7 @@ class AnimeData:
                 "episodes": anime_info["num_episodes"],
             }
         except Exception:
-            print(f"Error getting anime {id} details from API response")
+            cfg.logger.warning(f"Error getting anime {id} details from API response")
             return {}
 
     def resort(self) -> None:
@@ -224,33 +213,28 @@ class AnimeData:
                     continue
                 additional_info = await self.get_anime_mal_info(element.id)
                 async with session.begin():
-                    new_anime = {
-                        "id": element.id,
-                        "name": element.name,
-                        "link": element.link or additional_info.get("link"),
-                        "type": element.type or additional_info.get("type"),
-                        "episodes": element.episodes or additional_info.get("episodes"),
-                        "picture": element.picture or additional_info.get("picture"),
-                        "score": element.score,
-                        "status": element.status,
-                        "added_time": (
-                            (element.added_time or datetime.now(timezone.utc))
-                            if element.added_time != UNIX_BELOW_ZERO
-                            else None
-                        ),
-                        "completed_time": (
-                            (element.completed_time or datetime.now(timezone.utc))
-                            if element.status == "Просмотрено"
-                            else None
-                        ),
-                        "voice_acting": element.voice_acting,
-                        "comment": element.comment,
-                        "order_by": element.order_by,
-                        "series": element.series,
-                    }
-                    new_element = Anime(**new_anime)
-                    session.add(new_element)
-                    self.data[element.id] = new_anime
+                    dicted_element = element.model_dump()
+
+                    for key in ("link", "type", "episodes", "picture"):
+                        if not dicted_element[key]:
+                            dicted_element[key] = additional_info.get(key)
+
+                    dicted_element["added_time"] = (
+                        (dicted_element["added_time"] or datetime.now(timezone.utc))
+                        if dicted_element["added_time"] != UNIX_BELOW_ZERO
+                        else None
+                    )
+                    dicted_element["completed_time"] = (
+                        (dicted_element["completed_time"] or datetime.now(timezone.utc))
+                        if dicted_element["status"] in ("Просмотрено", "Заброшено")
+                        else None
+                    )
+
+                    new_anime = Anime(**dicted_element)
+                    session.add(new_anime)
+
+                    self.data[element.id] = dicted_element
+
                     inserted_ids.append(element.id)
                     inserted_elements_count += 1
             if not inserted_elements_count:
@@ -346,7 +330,38 @@ class AnimeData:
             self.resort()
             return update_info
 
-    async def get_all(self) -> list:
+    async def get_all(self, raw: bool) -> list:
+        if raw:
+            async with self.lock:
+                result = []
+                for item in self.data.values():
+                    item_record = {}
+                    for tag in (
+                        "id",
+                        "series",
+                        "name",
+                        "order_by",
+                        "voice_acting",
+                        "status",
+                        "comment",
+                        "score",
+                        "added_time",
+                        "completed_time",
+                    ):
+                        if item[tag]:
+                            item_record[tag] = item[tag]
+                    result.append(item_record)
+
+                return jsonable_encoder(
+                    result,
+                    custom_encoder={
+                        datetime: lambda datetime_obj: (
+                            datetime_obj.isoformat()
+                        ).replace("T", " "),
+                        ddate: lambda date_obj: (date_obj.isoformat()),
+                        dtime: lambda time_obj: (time_obj.isoformat()),
+                    },
+                )
         return self.sorted_list
 
     async def get_customers(self) -> list:
@@ -372,3 +387,41 @@ class AnimeData:
                 )
             result["people"] = by_customers
             return result
+
+    async def update_pictures(
+        self, session: AsyncSession, anime_list: list[int]
+    ) -> dict[int, str]:
+        result = {}
+        async with self.lock:
+            for anime_id in self.data:
+                if anime_list and anime_id not in anime_list:
+                    result[anime_id] = "Not found"
+                    continue
+
+                if anime_id > self.non_mal_border or (
+                    self.data[anime_id]["picture"] or ""
+                ).startswith("/static"):
+                    continue
+
+                new_mal_picture = (await self.get_anime_mal_info(anime_id)).get(
+                    "picture"
+                )
+                if not new_mal_picture:
+                    result[anime_id] = "No MAL picture"
+                    continue
+
+                if new_mal_picture != self.data[anime_id]["picture"]:
+                    async with session.begin():
+                        await session.execute(
+                            update(Anime)
+                            .where(Anime.id == anime_id)
+                            .values(picture=new_mal_picture)
+                        )
+                        self.data[anime_id]["picture"] = new_mal_picture
+                        result[anime_id] = "Updated"
+                else:
+                    if anime_list:
+                        result[anime_id] = "Not updated"
+
+        self.resort()
+        return result

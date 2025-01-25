@@ -1,17 +1,17 @@
+from api.answers import HTTPanswer
+from api.verification import login_admin_required
 from common.all_data import all_data
-from db.utils import get_session
+from db.common import get_session
 from fastapi import APIRouter, Depends
 from schemas import merch as schema_merch
-
-from . import HTTPanswer, login_admin_required
 
 router = APIRouter()
 
 
 @router.get("")
 @router.get("/")
-async def get_merch():
-    return HTTPanswer(200, await all_data.MERCH.get_all())
+async def get_merch(raw: bool = False):
+    return HTTPanswer(200, await all_data.MERCH.get_all(raw))
 
 
 @router.post("", dependencies=[Depends(login_admin_required)])

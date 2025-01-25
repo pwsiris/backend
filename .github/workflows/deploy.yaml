@@ -1,5 +1,5 @@
-name: Deploy app
-run-name: Deploy app from branch ${{ github.ref_name }} to ${{ inputs.target }} env with ${{ inputs.docker_port }} port
+name: Build and deploy app
+run-name: Build and deploy app from branch ${{ github.ref_name }} to ${{ inputs.target }} env with ${{ inputs.docker_port }} port
 
 on:
   workflow_dispatch:
@@ -17,7 +17,8 @@ on:
         default: '8041'
 
 env:
-  DOCKER_REGISTRY: ghcr.io
+  PWSI_NAME: pwsi
+  PWSI_DOCKER_REGISTRY: ghcr.io
 
 jobs:
   build:
@@ -27,33 +28,43 @@ jobs:
       contents: read
       packages: write
     outputs:
-      full_image_name: ${{ steps.define_image_names.outputs.FULL_IMAGE_NAME }}
-      image_name: ${{ steps.define_image_names.outputs.IMAGE_NAME }}
+      full_image_name: ${{ steps.define_build_params.outputs.FULL_IMAGE_NAME }}
+      image_name: ${{ steps.define_build_params.outputs.IMAGE_NAME }}
     steps:
-      - name: Lower case image name
-        id: define_image_names
-        env:
-          FULL_REPO: ${{ github.repository }}
-          REPO: ${{ github.event.repository.name }}
-          TARGET: ${{ inputs.target }}
-        run: |
-          echo "FULL_IMAGE_NAME=${FULL_REPO,,}/${TARGET}" >>${GITHUB_OUTPUT}
-          echo "IMAGE_NAME=${REPO,,}/${TARGET}" >>${GITHUB_OUTPUT}
       - name: Check out branch
         uses: actions/checkout@v3
         with:
           ref: ${{ github.ref_name }}
+      - name: Define build params
+        id: define_build_params
+        env:
+          COMMIT_SHA: ${{ github.sha }}
+          FULL_REPO: ${{ github.repository }}
+          REPO: ${{ github.event.repository.name }}
+          TARGET: ${{ inputs.target }}
+        run: |
+          echo "COMMIT_HASH=${COMMIT_SHA:0:7}" >>${GITHUB_OUTPUT}
+          echo "COMMIT_TIME=$(TZ=UTC git log -1 --format=%cd --date=iso-local)" >>${GITHUB_OUTPUT}
+          echo "BUILD_TIME=$(TZ=UTC date +"%Y-%m-%d %H:%M:%S %z")" >>${GITHUB_OUTPUT}
+          echo "FULL_IMAGE_NAME=${FULL_REPO,,}/${TARGET}" >>${GITHUB_OUTPUT}
+          echo "IMAGE_NAME=${REPO,,}/${TARGET}" >>${GITHUB_OUTPUT}
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v2
         with:
-          registry: ${{ env.DOCKER_REGISTRY }}
+          registry: ${{ env.PWSI_DOCKER_REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.PAT_GH }}
       - name: Build and push
         uses: docker/build-push-action@v4
         with:
           push: true
-          tags: ${{ env.DOCKER_REGISTRY }}/${{ steps.define_image_names.outputs.FULL_IMAGE_NAME }}:latest
+          build-args: |
+            APP_COMMIT_BRANCH=${{ github.ref_name }}
+            APP_COMMIT_HASH=${{ steps.define_build_params.outputs.COMMIT_HASH }}
+            APP_COMMIT_TIME=${{ steps.define_build_params.outputs.COMMIT_TIME }}
+            APP_BUILD_TIME=${{ steps.define_build_params.outputs.BUILD_TIME }}
+            APP_BUILD_NUMBER=${{ github.run_number }}
+          tags: ${{ env.PWSI_DOCKER_REGISTRY }}/${{ steps.define_build_params.outputs.FULL_IMAGE_NAME }}:latest
 
   alembic:
     runs-on: ubuntu-latest
@@ -65,8 +76,8 @@ jobs:
           ref: ${{ github.ref_name }}
       - name: TAR code
         env:
-          B_ENV: ${{ inputs.target }}
-        run: tar -cvf pwsi-backend-${{ env.B_ENV }}.tar .
+          PWSI_B_ENV: ${{ inputs.target }}
+        run: tar -cvf ${{ env.PWSI_NAME }}-backend-${{ env.PWSI_B_ENV }}.tar .
       - name: Copy code to host
         uses: appleboy/scp-action@master
         with:
@@ -75,12 +86,12 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           port: ${{ secrets.SSH_PORT }}
-          source: "pwsi-backend-${{ inputs.target }}.tar"
+          source: "${{ env.PWSI_NAME }}-backend-${{ inputs.target }}.tar"
           target: "~/builds"
       - name: Apply alembic
         uses: appleboy/ssh-action@v1.0.0
         env:
-          B_ENV: ${{ inputs.target }}
+          PWSI_B_ENV: ${{ inputs.target }}
           PWSI__DB_DSN: ${{ inputs.target == 'prod' && secrets.DB_DSN_PROD || secrets.DB_DSN_TEST }}
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -90,14 +101,14 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           script_stop: true
           script: |
-            mkdir ~/builds/pwsi-backend-${{ env.B_ENV }}
-            tar -xf ~/builds/pwsi-backend-${{ env.B_ENV }}.tar -C ~/builds/pwsi-backend-${{ env.B_ENV }}/
-            cd ~/builds/pwsi-backend-${{ env.B_ENV }}/
+            sudo rm -rf ~/builds/${{ env.PWSI_NAME }}-backend-${{ env.PWSI_B_ENV }} || true
+            mkdir ~/builds/${{ env.PWSI_NAME }}-backend-${{ env.PWSI_B_ENV }}
+            tar -xf ~/builds/${{ env.PWSI_NAME }}-backend-${{ env.PWSI_B_ENV }}.tar -C ~/builds/${{ env.PWSI_NAME }}-backend-${{ env.PWSI_B_ENV }}/
+            cd ~/builds/${{ env.PWSI_NAME }}-backend-${{ env.PWSI_B_ENV }}/
             export PWSI_DB_DSN=${{ env.PWSI__DB_DSN }}
             python3.10 -m alembic upgrade head
             cd ~
-            rm ~/builds/pwsi-backend-${{ env.B_ENV }}.tar
-            sudo rm -rf ~/builds/pwsi-backend-${{ env.B_ENV }}
+            rm ~/builds/${{ env.PWSI_NAME }}-backend-${{ env.PWSI_B_ENV }}.tar
 
   deploy:
     runs-on: ubuntu-latest
@@ -107,7 +118,7 @@ jobs:
       - name: Deploy
         uses: appleboy/ssh-action@v1.0.0
         env:
-          B_ENV: ${{ inputs.target }}
+          PWSI_B_ENV: ${{ inputs.target }}
           PWSI_DEPLOY_FULL_IMAGE_NAME: ${{ needs.build.outputs.full_image_name }}
           PWSI_DEPLOY_PAT_GH: ${{ secrets.PAT_GH }}
           PWSI_DEPLOY_GH_LOGIN: ${{ github.actor }}
@@ -120,25 +131,25 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           script_stop: true
           script: |
-            docker login ${{ env.DOCKER_REGISTRY }} -u ${{ env.PWSI_DEPLOY_GH_LOGIN }} -p ${{ env.PWSI_DEPLOY_PAT_GH }}
-            echo "-------- Try to stop pwsi-backend-${{ env.B_ENV }} container"
-            docker stop pwsi-backend-${{ env.B_ENV }} || true
-            echo "-------- Try to delete pwsi-backend-${{ env.B_ENV }} container"
-            docker container rm pwsi-backend-${{ env.B_ENV }} || true
+            docker login ${{ env.PWSI_DOCKER_REGISTRY }} -u ${{ env.PWSI_DEPLOY_GH_LOGIN }} -p ${{ env.PWSI_DEPLOY_PAT_GH }}
+            echo "-------- Try to stop ${{ env.PWSI_NAME }}-backend-${{ env.PWSI_B_ENV }} container"
+            docker stop ${{ env.PWSI_NAME }}-backend-${{ env.PWSI_B_ENV }} || true
+            echo "-------- Try to delete ${{ env.PWSI_NAME }}-backend-${{ env.PWSI_B_ENV }} container"
+            docker container rm ${{ env.PWSI_NAME }}-backend-${{ env.PWSI_B_ENV }} || true
             echo "-------- Try to delete ${{ env.PWSI_DEPLOY_FULL_IMAGE_NAME }} image"
-            docker rmi ${{ env.DOCKER_REGISTRY }}/${{ env.PWSI_DEPLOY_FULL_IMAGE_NAME }} || true
+            docker rmi ${{ env.PWSI_DOCKER_REGISTRY }}/${{ env.PWSI_DEPLOY_FULL_IMAGE_NAME }} || true
             echo "-------- Try to pull and run ${{ env.PWSI_DEPLOY_FULL_IMAGE_NAME }} image"
             docker run -d \
               -it \
-              --name pwsi-backend-${{ env.B_ENV }} \
-              --network=host \
+              --name ${{ env.PWSI_NAME }}-backend-${{ env.PWSI_B_ENV }} \
               --restart always \
+              --network=host \
               -e APP_HOST=127.0.0.1 \
               -e APP_PORT=${{ env.PWSI_DEPLOY_DOCKER_PORT }} \
-              -e APP_ENV=${{ env.B_ENV }} \
-              --mount type=bind,source=/home/${{ env.PWSI_DEPLOY_GH_LOGIN }}/deploy_configs/pwsi-backend-${{ env.B_ENV }}/config.yaml,target=/application/config/config.yaml \
-              ${{ env.DOCKER_REGISTRY }}/${{ env.PWSI_DEPLOY_FULL_IMAGE_NAME }}:latest
-            docker logout "${{ env.DOCKER_REGISTRY }}"
+              -e APP_ENV=${{ env.PWSI_B_ENV }} \
+              --mount type=bind,source=/home/${{ env.PWSI_DEPLOY_GH_LOGIN }}/deploy_configs/${{ env.PWSI_NAME }}-backend-${{ env.PWSI_B_ENV }}/config.yaml,target=/application/config/config.yaml \
+              ${{ env.PWSI_DOCKER_REGISTRY }}/${{ env.PWSI_DEPLOY_FULL_IMAGE_NAME }}:latest
+            docker logout "${{ env.PWSI_DOCKER_REGISTRY }}"
 
       - name: Delete old images
         uses: actions/delete-package-versions@v4

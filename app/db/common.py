@@ -1,3 +1,6 @@
+import sys
+from typing import Any
+
 from common.config import cfg
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.sql import text
@@ -13,11 +16,14 @@ async def get_session() -> AsyncSession:
 async def check_db() -> None:
     try:
         async with AsyncSession(_engine, expire_on_commit=False) as session:
-            answer = await session.execute(text("SELECT version();"))
-            print(
-                f"INFO:\t  Successfully connecting to database.\n\t  {answer.first()}",
-                flush=True,
-            )
+            await session.execute(text("SELECT 1;"))
+            cfg.logger.info("Successfully connected to database")
     except Exception as e:
-        print(f"ERROR:\t  Failed to connect to database:\n{str(e)}", flush=True)
-        raise
+        cfg.logger.error(f"Failed to connect to database: {str(e)}")
+        sys.exit(1)
+
+
+def get_model_dict(model: Any) -> dict[str, Any]:
+    return {
+        column.name: getattr(model, column.name) for column in model.__table__.columns
+    }

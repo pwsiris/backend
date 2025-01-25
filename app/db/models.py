@@ -1,3 +1,4 @@
+from datetime import date as ddate
 from datetime import datetime
 
 from sqlalchemy import MetaData
@@ -109,6 +110,7 @@ class Marathons(Base):
     comment: Mapped[str] = mapped_column(nullable=True)
     status: Mapped[str] = mapped_column(nullable=True)
     picture: Mapped[str] = mapped_column(nullable=True)
+    rules: Mapped[list[str]] = mapped_column(JSON, nullable=True)
     records: Mapped[str] = mapped_column(nullable=True)
     order: Mapped[int] = mapped_column(nullable=False)
     link: Mapped[str] = mapped_column(nullable=True)
@@ -137,4 +139,32 @@ class Merch(Base):
     creator_link: Mapped[str] = mapped_column(nullable=True)
     picture: Mapped[str] = mapped_column(nullable=True)
     picture_size: Mapped[str] = mapped_column(nullable=True)
+    order: Mapped[int] = mapped_column(nullable=False)
+
+
+class Auctions(Base):
+    __tablename__ = "auctions"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(nullable=False)
+    date: Mapped[ddate] = mapped_column(nullable=True)
+    description: Mapped[str] = mapped_column(nullable=True)
+    comment: Mapped[str] = mapped_column(nullable=True)
+    status: Mapped[str] = mapped_column(nullable=True)
+    picture: Mapped[str] = mapped_column(nullable=True)
+    order: Mapped[int] = mapped_column(nullable=True)
+    order_by: Mapped[str] = mapped_column(nullable=True)
+    auction_id: Mapped[int] = mapped_column(nullable=True)
+
+
+class Credits(Base):
+    __tablename__ = "credits"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(nullable=False)
+    description: Mapped[str] = mapped_column(nullable=True)
+    picture: Mapped[str] = mapped_column(nullable=True)
+    picture_size: Mapped[str] = mapped_column(nullable=True)
+    picture_original: Mapped[str] = mapped_column(nullable=True)
+    creators: Mapped[list[dict[str, str]]] = mapped_column(JSON, nullable=True)
     order: Mapped[int] = mapped_column(nullable=False)

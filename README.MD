@@ -3,15 +3,11 @@
 Refactored (with Docker, GitHub actions and Postgres (previous SQLite) support) backend for streamer website (API for content management) and 2nd line twitch bot (API for twitch bots to implement complex custom logic)
 
 ## Desired further improvements
-
 -   Login with Twitch
     -   Admin access for streamer and moderators
     -   User access for followers (games/videos/anime suggestions)
--   Connection to Twitch API for "streamer online" notifications
--   Connection to YouTube API for videos publication notifications
 -   Separate twitch-bot logic to standalone bot, not api for another bots
 -   Use Redis instead of "python-memory"
--   Maybe refactor config+secrets logic
 -   Visit statistics?
 -   Changes and improvements that I haven't thought about yet, better docs and better code?)
 

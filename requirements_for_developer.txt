@@ -3,5 +3,6 @@ black>=22.3.0
 isort>=5.10.1
 autoflake>=1.4
 
-alembic
-alembic-utils
+alembic==1.14.0
+alembic-utils==0.8.5
+psycopg2-binary==2.9.10

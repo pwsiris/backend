@@ -1,8 +1,14 @@
 import asyncio
+from datetime import date as ddate
+from datetime import datetime
+from datetime import time as dtime
 
 import httpx
+from common.config import cfg
 from common.errors import HTTPabort
+from db.common import get_model_dict
 from db.models import SCHEMA, Games
+from fastapi.encoders import jsonable_encoder
 from schemas import games as schema_games
 from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -25,22 +31,9 @@ class GamesData:
             for row in db_data:
                 if row.id > self.non_steam_border and row.id > self.non_steam_game:
                     self.non_steam_game = row.id
-                self.data[row.id] = {
-                    "id": row.id,
-                    "name": row.name,
-                    "subname": row.subname,
-                    "link": row.link,
-                    "picture": row.picture,
-                    "status": row.status,
-                    "genre": row.genre,
-                    "type": row.type,
-                    "records": row.records,
-                    "comment": row.comment,
-                    "gift_by": row.gift_by,
-                    "order_by": row.order_by,
-                }
+                self.data[row.id] = get_model_dict(row)
         self.resort()
-        print("INFO:\t  Games info was loaded to memory")
+        cfg.logger.info("Games info was loaded to memory")
 
     async def reset(self, session: AsyncSession) -> None:
         async with self.lock:
@@ -107,9 +100,9 @@ class GamesData:
                             result["picture"] = template
                             break
                 if not result.get("picture"):
-                    print(f"No valid pic for steam-game {steam_id}")
+                    cfg.logger.warning(f"No valid pic for steam-game {steam_id}")
             except Exception:
-                print(f"Error getting steam-game {steam_id} pic")
+                cfg.logger.warning(f"Error getting steam-game {steam_id} pic")
         return result
 
     async def add(
@@ -130,30 +123,18 @@ class GamesData:
 
                 additional_info = await self.check_steam(element.id)
                 async with session.begin():
-                    # new_game = element.model_dump()
-                    # if not new_game["link"]:
-                    #     new_game["link"] = additional_info.get("link")
-                    # if not new_game["picture"]:
-                    #     new_game["picture"] = additional_info.get("picture")
-                    new_game = {
-                        "id": element.id,
-                        "name": element.name,
-                        "subname": element.subname,
-                        "link": element.link or additional_info.get("link"),
-                        "picture": element.picture or additional_info.get("picture"),
-                        "status": element.status,
-                        "genre": element.genre,
-                        "type": element.type,
-                        "records": [record.model_dump() for record in element.records]
-                        if element.records
-                        else None,
-                        "comment": element.comment,
-                        "gift_by": element.gift_by,
-                        "order_by": element.order_by,
-                    }
-                    new_element = Games(**new_game)
-                    session.add(new_element)
-                    self.data[element.id] = new_game
+                    dicted_element = element.model_dump()
+
+                    if not dicted_element["link"]:
+                        dicted_element["link"] = additional_info.get("link")
+                    if not dicted_element["picture"]:
+                        dicted_element["picture"] = additional_info.get("picture")
+
+                    new_game = Games(**dicted_element)
+                    session.add(new_game)
+
+                    self.data[element.id] = dicted_element
+
                     inserted_ids.append(element.id)
                     inserted_elements_count += 1
             if not inserted_elements_count:
@@ -233,7 +214,41 @@ class GamesData:
             self.resort()
             return update_info
 
-    async def get_all(self, types: list[str]) -> dict:
+    async def get_all(self, raw: bool, types: list[str] = []) -> dict | list:
+        if raw:
+            async with self.lock:
+                result = []
+                for item in self.data.values():
+                    item_record = {}
+                    for tag in (
+                        "id",
+                        "name",
+                        "subname",
+                        "picture",
+                        "status",
+                        "genre",
+                        "type",
+                        "records",
+                        "comment",
+                        "gift_by",
+                        "order_by",
+                    ):
+                        if item[tag]:
+                            if tag == "picture" and not item[tag].startswith("/static"):
+                                continue
+                            item_record[tag] = item[tag]
+                    result.append(item_record)
+
+                return jsonable_encoder(
+                    result,
+                    custom_encoder={
+                        datetime: lambda datetime_obj: (
+                            datetime_obj.isoformat()
+                        ).replace("T", " "),
+                        ddate: lambda date_obj: (date_obj.isoformat()),
+                        dtime: lambda time_obj: (time_obj.isoformat()),
+                    },
+                )
         if types:
             result = {}
             for type in types:
@@ -307,13 +322,6 @@ class GamesData:
                         f"{game['name']} {status}".strip()
                     )
 
-                if (
-                    game["gift_by"]
-                    and game["order_by"]
-                    and game["gift_by"] != game["order_by"]
-                ):
-                    print(game["name"], game["gift_by"], game["order_by"])
-
                 for customer in customers:
                     if customer not in by_customers:
                         by_customers[customer] = {
@@ -349,3 +357,39 @@ class GamesData:
             result["people"] = by_customers
 
             return result
+
+    async def update_pictures(
+        self, session: AsyncSession, games_list: list[int]
+    ) -> dict[int, str]:
+        result = {}
+        async with self.lock:
+            for game_id in self.data:
+                if games_list and game_id not in games_list:
+                    result[game_id] = "Not found"
+                    continue
+
+                if game_id > self.non_steam_border or (
+                    self.data[game_id]["picture"] or ""
+                ).startswith("/static"):
+                    continue
+
+                new_steam_picture = (await self.check_steam(game_id)).get("picture")
+                if not new_steam_picture:
+                    result[game_id] = "No Steam picture"
+                    continue
+
+                if new_steam_picture != self.data[game_id]["picture"]:
+                    async with session.begin():
+                        await session.execute(
+                            update(Games)
+                            .where(Games.id == game_id)
+                            .values(picture=new_steam_picture)
+                        )
+                        self.data[game_id]["picture"] = new_steam_picture
+                        result[game_id] = "Updated"
+                else:
+                    if games_list:
+                        result[game_id] = "Not updated"
+
+        self.resort()
+        return result
