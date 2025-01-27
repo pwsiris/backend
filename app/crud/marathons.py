@@ -47,17 +47,27 @@ class MarathonsData:
         )
         marathons = {}
         for marathon_entity in marathons_entities:
+            marathon_entity_copy = deepcopy(marathon_entity)
+            if marathon_entity_copy["date_start"]:
+                marathon_entity_copy["date_start"] = marathon_entity_copy[
+                    "date_start"
+                ].isoformat()
+            if marathon_entity_copy["date_end"]:
+                marathon_entity_copy["date_end"] = marathon_entity_copy[
+                    "date_end"
+                ].isoformat()
+
             id = marathon_entity["id"]
             m_id = marathon_entity["marathon_id"]
             if m_id:
                 if m_id not in marathons:
                     marathons[m_id] = {"list": []}
-                marathons[m_id]["list"].append(deepcopy(marathon_entity))
+                marathons[m_id]["list"].append(deepcopy(marathon_entity_copy))
             else:
                 if id in marathons:
-                    marathons[id].update(marathon_entity)
+                    marathons[id].update(marathon_entity_copy)
                 else:
-                    marathon = deepcopy(marathon_entity)
+                    marathon = deepcopy(marathon_entity_copy)
                     marathon["list"] = []
                     marathons[id] = marathon
 
@@ -67,6 +77,7 @@ class MarathonsData:
                     "Пройдено",
                     "Завершено",
                     "Выполнено",
+                    "Отложено",
                     "Заброшено",
                 ):
                     marathons[marathon_id]["status"] = "Завершено"
@@ -334,7 +345,10 @@ class MarathonsData:
                         "description",
                         "comment",
                         "status",
+                        "date_start",
+                        "date_end",
                         "picture",
+                        "rules",
                         "records",
                         "order",
                         "link",
