@@ -132,6 +132,7 @@ class GamesData:
 
                     new_game = Games(**dicted_element)
                     session.add(new_game)
+                    await session.flush()
 
                     self.data[element.id] = dicted_element
 

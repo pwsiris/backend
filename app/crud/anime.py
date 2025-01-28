@@ -232,6 +232,7 @@ class AnimeData:
 
                     new_anime = Anime(**dicted_element)
                     session.add(new_anime)
+                    await session.flush()
 
                     self.data[element.id] = dicted_element
 
