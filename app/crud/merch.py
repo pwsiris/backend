@@ -253,10 +253,7 @@ class MerchData:
                         "picture_size",
                         "order",
                     ):
-                        if item[tag]:
-                            if tag == "picture" and not item[tag].startswith("/static"):
-                                continue
-                            item_record[tag] = item[tag]
+                        item_record[tag] = item[tag]
                     result.append(item_record)
 
                 return jsonable_encoder(

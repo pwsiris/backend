@@ -349,8 +349,10 @@ class AnimeData:
                         "added_time",
                         "completed_time",
                     ):
-                        if item[tag]:
-                            item_record[tag] = item[tag]
+                        if tag == "id" and item[tag] >= self.non_mal_border:
+                            for t in ("link", "picture", "type", "episodes"):
+                                item_record[t] = item[t]
+                        item_record[tag] = item[tag]
                     result.append(item_record)
 
                 return jsonable_encoder(

@@ -356,10 +356,15 @@ class MarathonsData:
                         "marathon_id",
                         "steam_id",
                     ):
-                        if item[tag]:
-                            if tag == "picture" and not item[tag].startswith("/static"):
-                                continue
-                            item_record[tag] = item[tag]
+                        if tag == "picture" and not item.get(tag, "").startswith(
+                            "/static"
+                        ):
+                            continue
+                        if tag == "link" and "store.steampowered.com" not in item.get(
+                            tag, ""
+                        ):
+                            continue
+                        item_record[tag] = item[tag]
                     result.append(item_record)
 
                 return jsonable_encoder(

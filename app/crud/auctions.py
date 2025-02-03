@@ -310,8 +310,7 @@ class AuctionsData:
                         "order_by",
                         "auction_id",
                     ):
-                        if item[tag]:
-                            item_record[tag] = item[tag]
+                        item_record[tag] = item[tag]
                     result.append(item_record)
 
                 return jsonable_encoder(

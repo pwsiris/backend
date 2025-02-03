@@ -201,8 +201,7 @@ class SocialsData:
                 for item in self.data.values():
                     item_record = {}
                     for tag in ("id", "name", "link", "icon", "type", "order"):
-                        if item[tag]:
-                            item_record[tag] = item[tag]
+                        item_record[tag] = item[tag]
                     result.append(item_record)
 
                 return jsonable_encoder(

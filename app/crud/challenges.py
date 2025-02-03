@@ -161,8 +161,7 @@ class ChallengesData:
                         "price",
                         "records",
                     ):
-                        if item[tag]:
-                            item_record[tag] = item[tag]
+                        item_record[tag] = item[tag]
                     result.append(item_record)
 
                 return jsonable_encoder(

@@ -168,8 +168,7 @@ class RouletteData:
                 for item in self.data.values():
                     item_record = {}
                     for tag in ("id", "name", "rarity", "description"):
-                        if item[tag]:
-                            item_record[tag] = item[tag]
+                        item_record[tag] = item[tag]
                     result.append(item_record)
 
                 return jsonable_encoder(
