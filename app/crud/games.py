@@ -375,7 +375,6 @@ class GamesData:
         async with self.lock:
             for game_id in self.data:
                 if games_list and game_id not in games_list:
-                    result[game_id] = "Not found"
                     continue
 
                 if game_id > self.non_steam_border or (
@@ -400,6 +399,10 @@ class GamesData:
                 else:
                     if games_list:
                         result[game_id] = "Not updated"
+
+            for game_id in games_list:
+                if game_id not in result:
+                    result[game_id] = "Not found"
 
         self.resort()
         return result
