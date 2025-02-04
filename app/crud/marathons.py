@@ -1,10 +1,16 @@
 import asyncio
 from copy import deepcopy
+from datetime import date as ddate
+from datetime import datetime
+from datetime import time as dtime
 
 import httpx
+from common.config import cfg
 from common.errors import HTTPabort
+from db.common import get_model_dict
 from db.models import SCHEMA, Marathons
-from schemas import marathons as marathons_games
+from fastapi.encoders import jsonable_encoder
+from schemas import marathons as schema_marathons
 from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql import text
@@ -20,21 +26,9 @@ class MarathonsData:
         async with session.begin():
             db_data = await session.scalars(select(Marathons))
             for row in db_data:
-                self.data[row.id] = {
-                    "id": row.id,
-                    "name": row.name,
-                    "description": row.description,
-                    "comment": row.comment,
-                    "status": row.status,
-                    "picture": row.picture,
-                    "records": row.records,
-                    "order": row.order,
-                    "link": row.link,
-                    "marathon_id": row.marathon_id,
-                    "steam_id": row.steam_id,
-                }
+                self.data[row.id] = get_model_dict(row)
         self.resort()
-        print("INFO:\t  Marathons info was loaded to memory")
+        cfg.logger.info("Marathons info was loaded to memory")
 
     async def reset(self, session: AsyncSession) -> None:
         async with self.lock:
@@ -53,29 +47,41 @@ class MarathonsData:
         )
         marathons = {}
         for marathon_entity in marathons_entities:
+            marathon_entity_copy = deepcopy(marathon_entity)
+            if marathon_entity_copy["date_start"]:
+                marathon_entity_copy["date_start"] = marathon_entity_copy[
+                    "date_start"
+                ].isoformat()
+            if marathon_entity_copy["date_end"]:
+                marathon_entity_copy["date_end"] = marathon_entity_copy[
+                    "date_end"
+                ].isoformat()
+
             id = marathon_entity["id"]
             m_id = marathon_entity["marathon_id"]
             if m_id:
-                if m_id in marathons:
-                    marathons[m_id]["games"].append(deepcopy(marathon_entity))
-                else:
-                    marathons[m_id] = {"games": [deepcopy(marathon_entity)]}
+                if m_id not in marathons:
+                    marathons[m_id] = {"list": []}
+                marathons[m_id]["list"].append(deepcopy(marathon_entity_copy))
             else:
                 if id in marathons:
-                    marathons[id].update(marathon_entity)
+                    marathons[id].update(marathon_entity_copy)
                 else:
-                    marathon = deepcopy(marathon_entity)
-                    marathon["games"] = []
+                    marathon = deepcopy(marathon_entity_copy)
+                    marathon["list"] = []
                     marathons[id] = marathon
 
         for marathon_id in marathons:
             try:
-                if marathons[marathon_id]["games"][-1]["status"] in (
+                if marathons[marathon_id]["list"][-1]["status"] in (
                     "Пройдено",
+                    "Завершено",
+                    "Выполнено",
+                    "Отложено",
                     "Заброшено",
                 ):
                     marathons[marathon_id]["status"] = "Завершено"
-                elif marathons[marathon_id]["games"][0]["status"] != None:
+                elif marathons[marathon_id]["list"][0]["status"] != None:
                     marathons[marathon_id]["status"] = "В процессе"
             except Exception:
                 pass
@@ -93,6 +99,8 @@ class MarathonsData:
                     f"https://cdn.akamai.steamstatic.com/steam/apps/{steam_id}/capsule_616x353.jpg",
                     f"https://cdn.akamai.steamstatic.com/steam/apps/{steam_id}/header.jpg",
                     f"https://cdn.cloudflare.steamstatic.com/steam/apps/{steam_id}/header.jpg",
+                    f"https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/{steam_id}/header.jpg",
+                    f"https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/{steam_id}/header.jpg",
                 ]
                 for template in templates:
                     async with httpx.AsyncClient() as ac:
@@ -101,13 +109,13 @@ class MarathonsData:
                             result["picture"] = template
                             break
                 if not result.get("picture"):
-                    print(f"No valid pic for steam-game {steam_id}")
+                    cfg.logger.warning(f"No valid pic for steam-game {steam_id}")
             except Exception:
-                print(f"Error getting steam-game {steam_id} pic")
+                cfg.logger.warning(f"Error getting steam-game {steam_id} pic")
         return result
 
     async def add(
-        self, session: AsyncSession, elements: list[marathons_games.NewElement]
+        self, session: AsyncSession, elements: list[schema_marathons.NewElement]
     ) -> list[int]:
         if not elements:
             return HTTPabort(422, "Empty list")
@@ -115,7 +123,7 @@ class MarathonsData:
             inserted_ids = []
             for element in elements:
                 if element.marathon_id:
-                    if self.data[element.marathon_id]["marathon_id"]:
+                    if element.marathon_id not in self.data:
                         inserted_ids.append(-1)
                         continue
                 if element.order:
@@ -151,35 +159,32 @@ class MarathonsData:
                                     self.data[marathon_entity_id]["order"] += 1
                     else:
                         element.order = len(marathon_entities) + 1
+                else:
+                    element.order = len(marathon_entities) + 1
 
                 additional_info = await self.check_steam(element.steam_id)
                 async with session.begin():
-                    new_marathon_entity = {
-                        "name": element.name,
-                        "description": element.description,
-                        "comment": element.comment,
-                        "status": element.status,
-                        "picture": additional_info.get("picture") or element.picture,
-                        "records": element.records,
-                        "order": element.order,
-                        "link": additional_info.get("link") or element.link,
-                        "marathon_id": element.marathon_id,
-                        "steam_id": element.steam_id,
-                    }
-                    new_element = Marathons(**new_marathon_entity)
-                    session.add(new_element)
+                    dicted_element = element.model_dump()
+
+                    if not dicted_element["link"]:
+                        dicted_element["link"] = additional_info.get("link")
+                    if not dicted_element["picture"]:
+                        dicted_element["picture"] = additional_info.get("picture")
+
+                    new_marathon_entity = Marathons(**dicted_element)
+                    session.add(new_marathon_entity)
                     await session.flush()
-                    await session.refresh(new_element)
+                    await session.refresh(new_marathon_entity)
 
-                    new_marathon_entity["id"] = new_element.id
-                    self.data[new_element.id] = new_marathon_entity
+                    dicted_element["id"] = new_marathon_entity.id
+                    self.data[new_marathon_entity.id] = dicted_element
 
-                    inserted_ids.append(new_element.id)
+                    inserted_ids.append(new_marathon_entity.id)
             self.resort()
             return inserted_ids
 
     async def delete(
-        self, session: AsyncSession, elements: list[marathons_games.DeletedElement]
+        self, session: AsyncSession, elements: list[schema_marathons.DeletedElement]
     ) -> list[bool]:
         if not elements:
             return HTTPabort(422, "Empty list")
@@ -221,7 +226,7 @@ class MarathonsData:
             return delete_info
 
     async def update(
-        self, session: AsyncSession, elements: list[marathons_games.UpdatedElement]
+        self, session: AsyncSession, elements: list[schema_marathons.UpdatedElement]
     ) -> list[str]:
         if not elements:
             return HTTPabort(422, "Empty list")
@@ -329,5 +334,47 @@ class MarathonsData:
             self.resort()
             return update_info
 
-    async def get_all(self) -> list[dict]:
+    async def get_all(self, raw: bool) -> list[dict]:
+        if raw:
+            async with self.lock:
+                result = []
+                for item in self.data.values():
+                    item_record = {}
+                    for tag in (
+                        "id",
+                        "name",
+                        "description",
+                        "comment",
+                        "status",
+                        "date_start",
+                        "date_end",
+                        "picture",
+                        "rules",
+                        "records",
+                        "order",
+                        "link",
+                        "marathon_id",
+                        "steam_id",
+                    ):
+                        if tag == "picture" and not item.get(tag, "").startswith(
+                            "/static"
+                        ):
+                            continue
+                        if tag == "link" and "store.steampowered.com" not in item.get(
+                            tag, ""
+                        ):
+                            continue
+                        item_record[tag] = item[tag]
+                    result.append(item_record)
+
+                return jsonable_encoder(
+                    result,
+                    custom_encoder={
+                        datetime: lambda datetime_obj: (
+                            datetime_obj.isoformat()
+                        ).replace("T", " "),
+                        ddate: lambda date_obj: (date_obj.isoformat()),
+                        dtime: lambda time_obj: (time_obj.isoformat()),
+                    },
+                )
         return self.sorted_list

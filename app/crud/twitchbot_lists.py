@@ -2,6 +2,7 @@ import asyncio
 import random
 from datetime import datetime
 
+from common.config import cfg
 from common.errors import HTTPabort
 from db.models import SCHEMA, TwitchBotLists
 from schemas import twitchbot
@@ -26,7 +27,7 @@ class TwitchBotList:
             )
             self.data = {element.id: element.value for element in db_data}
 
-        print(f"INFO:\t  TwitchBot {self.category} info was loaded to memory")
+        cfg.logger.info(f"TwitchBot {self.category} info was loaded to memory")
 
     async def reset(self, session: AsyncSession) -> None:
         async with self.lock:
@@ -113,8 +114,10 @@ class TwitchBotList:
             if not updated_elements_count:
                 HTTPabort(404, "No elements to update")
 
-    async def get_all(self) -> dict[int, str]:
+    async def get_all(self, raw: bool) -> dict[int, str]:
         async with self.lock:
+            if raw:
+                return "|||||".join(self.data.values())
             return self.data
 
     def get_random(self) -> str:

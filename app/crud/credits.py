@@ -6,48 +6,46 @@ from datetime import time as dtime
 from common.config import cfg
 from common.errors import HTTPabort
 from db.common import get_model_dict
-from db.models import SCHEMA, Merch
+from db.models import SCHEMA, Credits
 from fastapi.encoders import jsonable_encoder
-from schemas import merch as schema_merch
+from schemas import credits as schema_credits
 from sqlalchemy import delete, insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql import text
 
 
-class MerchData:
+class CreditsData:
     def __init__(self) -> None:
-        self.status = ""
         self.data = {}
         self.sorted_list = []
         self.lock = asyncio.Lock()
 
     async def setup(self, session: AsyncSession) -> None:
         async with session.begin():
-            db_data = await session.scalars(select(Merch))
+            db_data = await session.scalars(select(Credits))
             for row in db_data:
                 self.data[row.id] = get_model_dict(row)
         self.resort()
-        cfg.logger.info("Merch info was loaded to memory")
+        cfg.logger.info("Credits info was loaded to memory")
 
     async def reset(self, session: AsyncSession) -> None:
         async with self.lock:
             async with session.begin():
                 await session.execute(
                     text(
-                        f"TRUNCATE TABLE {SCHEMA}.{Merch.__table__.name} RESTART IDENTITY;"
+                        f"TRUNCATE TABLE {SCHEMA}.{Credits.__table__.name} RESTART IDENTITY;"
                     )
                 )
-            self.status = ""
             self.data = {}
             self.sorted_list = []
 
     def resort(self) -> None:
         self.sorted_list = sorted(
-            list(self.data.values()), key=lambda merch: merch["order"]
+            list(self.data.values()), key=lambda item: item["order"]
         )
 
     async def add(
-        self, session: AsyncSession, elements: list[schema_merch.NewElement]
+        self, session: AsyncSession, elements: list[schema_credits.NewElement]
     ) -> list[int]:
         if not elements:
             return HTTPabort(422, "Empty list")
@@ -68,7 +66,7 @@ class MerchData:
             sorted_new_elements = sorted(
                 new_elements, key=lambda element: element["order"]
             )
-            new_orders = {id: merch["order"] for id, merch in self.data.items()}
+            new_orders = {id: item["order"] for id, item in self.data.items()}
 
             max_new_old_order = len(self.data)
             for element in sorted_new_elements:
@@ -98,7 +96,7 @@ class MerchData:
             new_ids = []
             async with session.begin():
                 ids = await session.execute(
-                    insert(Merch).values(new_elements).returning(Merch.id)
+                    insert(Credits).values(new_elements).returning(Credits.id)
                 )
                 new_ids = [id for id, in ids]
 
@@ -110,7 +108,7 @@ class MerchData:
 
                 if new_orders_minimized:
                     await session.execute(
-                        update(Merch),
+                        update(Credits),
                         [
                             {"id": id, "order": order}
                             for id, order in new_orders_minimized.items()
@@ -126,7 +124,7 @@ class MerchData:
             return new_ids
 
     async def delete(
-        self, session: AsyncSession, elements: list[schema_merch.DeletedElement]
+        self, session: AsyncSession, elements: list[schema_credits.DeletedElement]
     ) -> list[bool]:
         if not elements:
             return HTTPabort(422, "Empty list")
@@ -155,10 +153,12 @@ class MerchData:
                     orders_minimized.append({"id": orders[idx]["id"], "order": idx + 1})
 
             async with session.begin():
-                await session.execute(delete(Merch).where(Merch.id.in_(ids_for_delete)))
+                await session.execute(
+                    delete(Credits).where(Credits.id.in_(ids_for_delete))
+                )
 
                 if orders_minimized:
-                    await session.execute(update(Merch), orders_minimized)
+                    await session.execute(update(Credits), orders_minimized)
 
                 for id in ids_for_delete:
                     del self.data[id]
@@ -172,7 +172,7 @@ class MerchData:
             return delete_info
 
     async def update(
-        self, session: AsyncSession, elements: list[schema_merch.UpdatedElement]
+        self, session: AsyncSession, elements: list[schema_credits.UpdatedElement]
     ) -> list[str]:
         if not elements:
             return HTTPabort(422, "Empty list")
@@ -216,11 +216,11 @@ class MerchData:
                         new_orders_minimized[id] = new_orders[id]
 
             async with session.begin():
-                await session.execute(update(Merch), updated_elements)
+                await session.execute(update(Credits), updated_elements)
 
                 if new_orders_minimized:
                     await session.execute(
-                        update(Merch),
+                        update(Credits),
                         [
                             {"id": id, "order": order}
                             for id, order in new_orders_minimized.items()
@@ -245,12 +245,10 @@ class MerchData:
                         "id",
                         "name",
                         "description",
-                        "price",
-                        "status",
-                        "creator_name",
-                        "creator_link",
                         "picture",
                         "picture_size",
+                        "picture_original",
+                        "creators",
                         "order",
                     ):
                         item_record[tag] = item[tag]
@@ -267,9 +265,3 @@ class MerchData:
                     },
                 )
         return self.sorted_list
-
-    def set_status(self, status) -> None:
-        self.status = status
-
-    def get_status(self) -> str:
-        return self.status

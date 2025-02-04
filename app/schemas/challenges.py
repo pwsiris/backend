@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from schemas._records import Records
 
 
 class NewElement(BaseModel):
@@ -10,7 +11,7 @@ class NewElement(BaseModel):
     status: str | None = None
     type: str | None = None
     price: str | None = None
-    records: str | None = None
+    records: list[Records] | None = None
 
 
 class DeletedElement(BaseModel):
@@ -27,4 +28,4 @@ class UpdatedElement(BaseModel):
     status: str | None = None
     type: str | None = None
     price: str | None = None
-    records: str | None = None
+    records: list[Records] | None = None

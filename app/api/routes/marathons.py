@@ -1,62 +1,62 @@
+from api.answers import HTTPanswer
+from api.verification import login_admin_required
 from common.all_data import all_data
-from db.utils import get_session
+from db.common import get_session
 from fastapi import APIRouter, Depends
-from schemas import socials as schema_socials
-
-from . import HTTPanswer, login_admin_required
+from schemas import marathons as schema_marathons
 
 router = APIRouter()
 
 
 @router.get("")
 @router.get("/")
-async def get_socials():
-    return HTTPanswer(200, await all_data.SOCIALS.get_all())
+async def get_marathons(raw: bool = False):
+    return HTTPanswer(200, await all_data.MARATHONS.get_all(raw))
 
 
 @router.post("", dependencies=[Depends(login_admin_required)])
 @router.post("/", dependencies=[Depends(login_admin_required)])
-async def add_socials(
-    elements: list[schema_socials.NewElement],
+async def add_marathons(
+    elements: list[schema_marathons.NewElement],
     session=Depends(get_session),
 ):
     return HTTPanswer(
         201,
-        await all_data.SOCIALS.add(session, elements),
+        await all_data.MARATHONS.add(session, elements),
     )
 
 
 @router.put("", dependencies=[Depends(login_admin_required)])
 @router.put("/", dependencies=[Depends(login_admin_required)])
-async def update_socials(
-    elements: list[schema_socials.UpdatedElement],
+async def update_marathons(
+    elements: list[schema_marathons.UpdatedElement],
     session=Depends(get_session),
 ):
     return HTTPanswer(
         200,
         {
             "status": "Update info",
-            "info": await all_data.SOCIALS.update(session, elements),
+            "info": await all_data.MARATHONS.update(session, elements),
         },
     )
 
 
 @router.delete("", dependencies=[Depends(login_admin_required)])
 @router.delete("/", dependencies=[Depends(login_admin_required)])
-async def delete_socials(
-    elements: list[schema_socials.DeletedElement],
+async def delete_marathons(
+    elements: list[schema_marathons.DeletedElement],
     session=Depends(get_session),
 ):
     return HTTPanswer(
         200,
         {
             "status": "Delete info",
-            "info": await all_data.SOCIALS.delete(session, elements),
+            "info": await all_data.MARATHONS.delete(session, elements),
         },
     )
 
 
 @router.get("/reset", dependencies=[Depends(login_admin_required)])
-async def reset_socials(session=Depends(get_session)):
-    await all_data.SOCIALS.reset(session)
-    return HTTPanswer(200, "Socials were erased")
+async def reset_marathons(session=Depends(get_session)):
+    await all_data.MARATHONS.reset(session)
+    return HTTPanswer(200, "Marathons were erased")

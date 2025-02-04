@@ -1,10 +1,10 @@
+from api.answers import HTTPanswer
+from api.verification import login_admin_required
 from common.all_data import all_data
 from common.errors import HTTPabort
-from db.utils import get_session
+from db.common import get_session
 from fastapi import APIRouter, Depends
 from schemas import twitchbot as schema_twitchbot
-
-from . import HTTPanswer, login_admin_required
 
 router = APIRouter()
 
@@ -48,11 +48,11 @@ async def reset_counters(session=Depends(get_session)):
 
 
 @router.get("/{category}", dependencies=[Depends(login_admin_required)])
-async def get_all_elements(category: str):
+async def get_all_elements(category: str, raw: bool = False):
     if not all_data.is_twitchbot(category):
         HTTPabort(404, "Category not found")
 
-    return HTTPanswer(200, await getattr(all_data, category.upper()).get_all())
+    return HTTPanswer(200, await getattr(all_data, category.upper()).get_all(raw))
 
 
 @router.post("/{category}", dependencies=[Depends(login_admin_required)])

@@ -1,17 +1,17 @@
+from api.answers import HTTPanswer
+from api.verification import login_admin_required
 from common.all_data import all_data
-from db.utils import get_session
+from db.common import get_session
 from fastapi import APIRouter, Depends, Query
 from schemas import games as schema_games
-
-from . import HTTPanswer, login_admin_required
 
 router = APIRouter()
 
 
 @router.get("")
 @router.get("/")
-async def get_games(types: list[str] = Query([])):
-    return HTTPanswer(200, await all_data.GAMES.get_all(types))
+async def get_games(raw: bool = False, types: list[str] = Query([])):
+    return HTTPanswer(200, await all_data.GAMES.get_all(raw, types))
 
 
 @router.post("", dependencies=[Depends(login_admin_required)])
@@ -61,7 +61,7 @@ async def get_genres(genre: str = Query("")):
     return HTTPanswer(200, await all_data.GAMES.get_genres(genre))
 
 
-@router.put("/genres")
+@router.put("/genres", dependencies=[Depends(login_admin_required)])
 async def update_genres(
     elements: list[schema_games.UpdatedGenre],
     session=Depends(get_session),
@@ -84,3 +84,11 @@ async def reset_games(session=Depends(get_session)):
 @router.get("/customers", dependencies=[Depends(login_admin_required)])
 async def games_customers():
     return HTTPanswer(200, await all_data.GAMES.get_customers())
+
+
+@router.post("/pictures", dependencies=[Depends(login_admin_required)])
+async def update_stream_pictures(
+    elements: list[int] = [],
+    session=Depends(get_session),
+):
+    return HTTPanswer(200, await all_data.GAMES.update_pictures(session, elements))

@@ -1,17 +1,17 @@
+from api.answers import HTTPanswer
+from api.verification import login_admin_required
 from common.all_data import all_data
-from db.utils import get_session
+from db.common import get_session
 from fastapi import APIRouter, Depends, Query
 from schemas import challenges as schema_challenges
-
-from . import HTTPanswer, login_admin_required
 
 router = APIRouter()
 
 
 @router.get("")
 @router.get("/")
-async def get_challenges(types: list[str] = Query([])):
-    return HTTPanswer(200, await all_data.CHALLENGES.get_all(types))
+async def get_challenges(raw: bool = False, types: list[str] = Query([])):
+    return HTTPanswer(200, await all_data.CHALLENGES.get_all(raw, types))
 
 
 @router.post("", dependencies=[Depends(login_admin_required)])
