@@ -82,7 +82,7 @@ class DataParamsData:
 
     async def update(
         self, session: AsyncSession, data_param: schema_data_params.Element
-    ) -> str:
+    ) -> None:
         async with self.lock:
             if data_param.name not in self.data:
                 HTTPabort(404, "Not found")
