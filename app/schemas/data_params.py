@@ -17,16 +17,10 @@ class Element(BaseModel):
             if getattr(self, value) != None:
                 count += 1
 
-        if count == 0:
+        if count != 1:
             raise PydanticCustomError(
                 "Values count",
                 "Need one value (bool, int, float, str), but {count} given",
-                {"count": count},
-            )
-        if count > 1:
-            raise PydanticCustomError(
-                "Values count",
-                "Need only one value (bool, int, float, str), but {count} given",
                 {"count": count},
             )
         return self
