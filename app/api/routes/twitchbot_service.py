@@ -4,23 +4,39 @@ from common.all_data import all_data
 from common.errors import HTTPabort
 from db.common import get_session
 from fastapi import APIRouter, Depends
+from schemas import data_params as schema_data_params
 from schemas import twitchbot as schema_twitchbot
 
 router = APIRouter()
 
 
 @router.put("/timecode-answer", dependencies=[Depends(login_admin_required)])
-async def timecode_text(new_answer: schema_twitchbot.TimecodeAnswer):
-    all_data.TIMECODE_MESSAGE = new_answer.value
+async def timecode_text(
+    new_answer: schema_twitchbot.TimecodeAnswer, session=Depends(get_session)
+):
+    await all_data.DATAPARAMS.update(
+        session,
+        schema_data_params.Element(name="TIMECODE_MESSAGE", value_str=new_answer.value),
+    )
     return HTTPanswer(200, "Timecode answer was changed")
 
 
 @router.put("/cheats", dependencies=[Depends(login_admin_required)])
-async def cheating(cheats: schema_twitchbot.Cheats):
-    if cheats.streamer:
-        all_data.BITE_CHEAT_STREAMER_PERCENT = cheats.streamer
-    if cheats.defense:
-        all_data.BITE_CHEAT_DEFENSE_PERCENT = cheats.defense
+async def cheating(cheats: schema_twitchbot.Cheats, session=Depends(get_session)):
+    if cheats.streamer != None:
+        await all_data.DATAPARAMS.update(
+            session,
+            schema_data_params.Element(
+                name="BITE_CHEAT_STREAMER_PERCENT", value_int=cheats.streamer
+            ),
+        )
+    if cheats.defense != None:
+        await all_data.DATAPARAMS.update(
+            session,
+            schema_data_params.Element(
+                name="BITE_CHEAT_DEFENSE_PERCENT", value_int=cheats.defense
+            ),
+        )
     return HTTPanswer(200, f"were set to {cheats.model_dump(exclude_none=True)}")
 
 
@@ -29,8 +45,8 @@ async def cheating_info():
     return HTTPanswer(
         200,
         {
-            "streamer": all_data.BITE_CHEAT_STREAMER_PERCENT,
-            "defense": all_data.BITE_CHEAT_DEFENSE_PERCENT,
+            "streamer": all_data.DATAPARAMS.get("BITE_CHEAT_STREAMER_PERCENT"),
+            "defense": all_data.DATAPARAMS.get("BITE_CHEAT_DEFENSE_PERCENT"),
         },
     )
 

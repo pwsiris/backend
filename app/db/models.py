@@ -170,3 +170,14 @@ class Credits(Base):
     picture_original: Mapped[str] = mapped_column(nullable=True)
     creators: Mapped[list[dict[str, str]]] = mapped_column(JSON, nullable=True)
     order: Mapped[int] = mapped_column(nullable=False)
+
+
+class DataParams(Base):
+    __tablename__ = "data_params"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(nullable=False, unique=True)
+    value_bool: Mapped[bool] = mapped_column(nullable=True)
+    value_int: Mapped[int] = mapped_column(nullable=True)
+    value_float: Mapped[float] = mapped_column(nullable=True)
+    value_str: Mapped[str] = mapped_column(nullable=True)
