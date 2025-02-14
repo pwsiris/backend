@@ -1,4 +1,5 @@
-from pydantic import BaseModel, ValidationError, model_validator
+from pydantic import BaseModel, model_validator
+from pydantic_core import PydanticCustomError
 from typing_extensions import Self
 
 
@@ -17,9 +18,17 @@ class Element(BaseModel):
                 count += 1
 
         if count == 0:
-            raise ValidationError("Need one value")
+            raise PydanticCustomError(
+                "Values count",
+                "Need one value (bool, int, float, str), but {count} given",
+                {"count": count},
+            )
         if count > 1:
-            raise ValidationError("Need only one value")
+            raise PydanticCustomError(
+                "Values count",
+                "Need only one value (bool, int, float, str), but {count} given",
+                {"count": count},
+            )
         return self
 
 

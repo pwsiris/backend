@@ -10,7 +10,7 @@ router = APIRouter()
 
 @router.get("/{name}")
 async def get_data_param(name):
-    return HTTPanswer(200, await all_data.DATAPARAMS.get(name))
+    return HTTPanswer(200, all_data.DATAPARAMS.get(name))
 
 
 @router.post("", dependencies=[Depends(login_admin_required)])

@@ -44,9 +44,10 @@ class DataParamsData:
 
             for name, value in self.DEFAULTS.items():
                 if name not in db_names:
-                    await session.execute(insert(DataParams).values(value))
-                    self.raw_data[name] = value
-                    self.data[name] = self.get_value(value)
+                    row = {"name": name, **value}
+                    await session.execute(insert(DataParams).values(row))
+                    self.raw_data[name] = row
+                    self.data[name] = self.get_value(row)
 
         cfg.logger.info("Data Params info was loaded to memory")
 
@@ -61,16 +62,17 @@ class DataParamsData:
             self.raw_data = {}
             self.data = {}
             for name, value in self.DEFAULTS.items():
-                await session.execute(insert(DataParams).values(value))
-                self.raw_data[name] = value
-                self.data[name] = self.get_value(value)
+                row = {"name": name, **value}
+                await session.execute(insert(DataParams).values(row))
+                self.raw_data[name] = row
+                self.data[name] = self.get_value(row)
 
     async def add(
         self, session: AsyncSession, data_param: schema_data_params.Element
     ) -> None:
         async with self.lock:
             if data_param.name in self.data:
-                HTTPabort(409, "Already exists")
+                HTTPabort(409, "Data Param already exists")
             async with session.begin():
                 await session.execute(
                     insert(DataParams).values(data_param.model_dump())
@@ -85,7 +87,7 @@ class DataParamsData:
     ) -> None:
         async with self.lock:
             if data_param.name not in self.data:
-                HTTPabort(404, "Not found")
+                HTTPabort(404, "Data Param not found")
             async with session.begin():
                 await session.execute(
                     update(DataParams)
@@ -108,6 +110,8 @@ class DataParamsData:
                 del self.raw_data[name]
 
     def get(self, name: str) -> Any:
+        if name not in self.data:
+            HTTPabort(404, "Data Param not found")
         return self.data.get(name)
 
     async def get_all(self, raw=False) -> list[dict[str, Any]]:
