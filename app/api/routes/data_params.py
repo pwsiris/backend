@@ -15,32 +15,41 @@ async def get_data_param(name):
 
 @router.post("", dependencies=[Depends(login_admin_required)])
 @router.post("/", dependencies=[Depends(login_admin_required)])
-async def add_data_param(
-    data_param: schema_data_params.Element,
+async def add_data_params(
+    elements: list[schema_data_params.Element],
     session=Depends(get_session),
 ):
-    await all_data.DATAPARAMS.add(session, data_param)
-    return HTTPanswer(201, "Added")
+    return HTTPanswer(201, await all_data.DATAPARAMS.add(session, elements))
 
 
 @router.put("", dependencies=[Depends(login_admin_required)])
 @router.put("/", dependencies=[Depends(login_admin_required)])
-async def update_data_param(
-    data_param: schema_data_params.Element,
+async def update_data_params(
+    elements: list[schema_data_params.Element],
     session=Depends(get_session),
 ):
-    await all_data.DATAPARAMS.update(session, data_param)
-    return HTTPanswer(200, "Updated")
+    return HTTPanswer(
+        200,
+        {
+            "status": "Update info",
+            "info": await all_data.DATAPARAMS.update(session, elements),
+        },
+    )
 
 
 @router.delete("", dependencies=[Depends(login_admin_required)])
 @router.delete("/", dependencies=[Depends(login_admin_required)])
-async def delete_data_param(
-    data_param: schema_data_params.ElementName,
+async def delete_data_params(
+    elements: list[schema_data_params.ElementName],
     session=Depends(get_session),
 ):
-    await all_data.DATAPARAMS.delete(session, data_param.name)
-    return HTTPanswer(200, "Deleted")
+    return HTTPanswer(
+        200,
+        {
+            "status": "Delete info",
+            "info": await all_data.DATAPARAMS.delete(session, elements),
+        },
+    )
 
 
 @router.get("/reset", dependencies=[Depends(login_admin_required)])

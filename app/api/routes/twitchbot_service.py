@@ -16,7 +16,11 @@ async def timecode_text(
 ):
     await all_data.DATAPARAMS.update(
         session,
-        schema_data_params.Element(name="TIMECODE_MESSAGE", value_str=new_answer.value),
+        [
+            schema_data_params.Element(
+                name="TIMECODE_MESSAGE", value_str=new_answer.value
+            )
+        ],
     )
     return HTTPanswer(200, "Timecode answer was changed")
 
@@ -26,16 +30,20 @@ async def cheating(cheats: schema_twitchbot.Cheats, session=Depends(get_session)
     if cheats.streamer != None:
         await all_data.DATAPARAMS.update(
             session,
-            schema_data_params.Element(
-                name="BITE_CHEAT_STREAMER_PERCENT", value_int=cheats.streamer
-            ),
+            [
+                schema_data_params.Element(
+                    name="BITE_CHEAT_STREAMER_PERCENT", value_int=cheats.streamer
+                )
+            ],
         )
     if cheats.defense != None:
         await all_data.DATAPARAMS.update(
             session,
-            schema_data_params.Element(
-                name="BITE_CHEAT_DEFENSE_PERCENT", value_int=cheats.defense
-            ),
+            [
+                schema_data_params.Element(
+                    name="BITE_CHEAT_DEFENSE_PERCENT", value_int=cheats.defense
+                )
+            ],
         )
     return HTTPanswer(200, f"were set to {cheats.model_dump(exclude_none=True)}")
 

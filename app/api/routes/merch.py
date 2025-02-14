@@ -61,7 +61,7 @@ async def delete_merch(
 async def reset_merch(session=Depends(get_session)):
     await all_data.MERCH.reset(session)
     await all_data.DATAPARAMS.update(
-        session, schema_data_params.Element(name="MERCH_STATUS", value_str="")
+        session, [schema_data_params.Element(name="MERCH_STATUS", value_str="")]
     )
     return HTTPanswer(200, "Merch was erased")
 
@@ -72,7 +72,7 @@ async def change_status_merch(
 ):
     await all_data.DATAPARAMS.update(
         session,
-        schema_data_params.Element(name="MERCH_STATUS", value_str=status.status),
+        [schema_data_params.Element(name="MERCH_STATUS", value_str=status.status)],
     )
     return HTTPanswer(200, "Merch status was updated")
 

@@ -68,46 +68,88 @@ class DataParamsData:
                 self.data[name] = self.get_value(row)
 
     async def add(
-        self, session: AsyncSession, data_param: schema_data_params.Element
-    ) -> None:
+        self, session: AsyncSession, elements: list[schema_data_params.Element]
+    ) -> list[int]:
+        if not elements:
+            return HTTPabort(422, "Empty list")
         async with self.lock:
-            if data_param.name in self.data:
-                HTTPabort(409, "Data Param already exists")
-            async with session.begin():
-                await session.execute(
-                    insert(DataParams).values(data_param.model_dump())
-                )
-                self.raw_data[data_param.name] = data_param.model_dump()
-                self.data[data_param.name] = self.get_value(
-                    self.raw_data[data_param.name]
-                )
+            inserted_elements_count = 0
+            inserted_ids = []
+            for element in elements:
+                if element.name in self.data:
+                    inserted_ids.append(-1)
+                    continue
+
+                dicted_element = element.model_dump()
+                async with session.begin():
+                    inserted_element = await session.scalar(
+                        insert(DataParams).values(dicted_element).returning(DataParams)
+                    )
+                    self.raw_data[element.name] = dicted_element
+                    self.data[element.name] = self.get_value(dicted_element)
+
+                    inserted_ids.append(inserted_element.id)
+                    inserted_elements_count += 1
+            if not inserted_elements_count:
+                HTTPabort(409, "Elements already exist")
+            return inserted_ids
 
     async def update(
-        self, session: AsyncSession, data_param: schema_data_params.Element
-    ) -> None:
+        self, session: AsyncSession, elements: list[schema_data_params.Element]
+    ) -> list[str]:
+        if not elements:
+            return HTTPabort(422, "Empty list")
         async with self.lock:
-            if data_param.name not in self.data:
-                HTTPabort(404, "Data Param not found")
-            async with session.begin():
-                await session.execute(
-                    update(DataParams)
-                    .where(DataParams.name == data_param.name)
-                    .values(data_param.model_dump(exclude={"name"}))
-                )
-                self.raw_data[data_param.name] = data_param.model_dump()
-                self.data[data_param.name] = self.get_value(
-                    self.raw_data[data_param.name]
-                )
+            update_info = []
+            for element in elements:
+                if element.name not in self.data:
+                    update_info.append("No element")
+                    continue
 
-    async def delete(self, session: AsyncSession, name: str) -> None:
+                dicted_element = element.model_dump()
+                async with session.begin():
+                    await session.execute(
+                        update(DataParams)
+                        .where(DataParams.name == element.name)
+                        .values(dicted_element)
+                    )
+                    self.raw_data[element.name] = dicted_element
+                    self.data[element.name] = self.get_value(dicted_element)
+
+                    update_info.append("Updated")
+            if "Updated" not in update_info:
+                HTTPabort(404, "No elements to update")
+            return update_info
+
+    async def delete(
+        self, session: AsyncSession, elements: list[schema_data_params.ElementName]
+    ) -> list[str]:
+        if not elements:
+            return HTTPabort(422, "Empty list")
         async with self.lock:
-            if name in self.DEFAULTS:
-                HTTPabort(409, "Can't remove params used in code")
+            delete_info = []
+            for element in elements:
+                if element.name not in self.data:
+                    delete_info.append("False")
+                    continue
+                if element.name in self.DEFAULTS:
+                    delete_info.append("Can't remove params used in code")
+                    continue
 
-            async with session.begin():
-                await session.execute(delete(DataParams).where(DataParams.name == name))
-                del self.data[name]
-                del self.raw_data[name]
+                async with session.begin():
+                    await session.execute(
+                        delete(DataParams).where(DataParams.name == element.name)
+                    )
+                    del self.data[element.name]
+                    del self.raw_data[element.name]
+
+                    delete_info.append("True")
+            if "True" not in delete_info:
+                if "Can't remove params used in code" not in delete_info:
+                    HTTPabort(404, "No elements to delete")
+                if "False" not in delete_info:
+                    HTTPabort(404, "Can't remove params used in code")
+            return delete_info
 
     def get(self, name: str) -> Any:
         if name not in self.data:

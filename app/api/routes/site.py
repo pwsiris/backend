@@ -38,9 +38,11 @@ async def site_message_enabled(
 ):
     await all_data.DATAPARAMS.update(
         session,
-        schema_data_params.Element(
-            name="SITE_MESSAGES_ENABLED", value_bool=enabled.value
-        ),
+        [
+            schema_data_params.Element(
+                name="SITE_MESSAGES_ENABLED", value_bool=enabled.value
+            )
+        ],
     )
     return HTTPanswer(200, f"Set to {enabled.value}")
 
@@ -49,15 +51,19 @@ async def site_message_enabled(
 async def update_message_title(title: schema_site.Title, session=Depends(get_session)):
     await all_data.DATAPARAMS.update(
         session,
-        schema_data_params.Element(
-            name="SITE_MESSAGES_TITLE_TEXT", value_str=title.text
-        ),
+        [
+            schema_data_params.Element(
+                name="SITE_MESSAGES_TITLE_TEXT", value_str=title.text
+            )
+        ],
     )
     await all_data.DATAPARAMS.update(
         session,
-        schema_data_params.Element(
-            name="SITE_MESSAGES_TITLE_EDITABLE", value_bool=title.editable
-        ),
+        [
+            schema_data_params.Element(
+                name="SITE_MESSAGES_TITLE_EDITABLE", value_str=title.editable
+            )
+        ],
     )
     return HTTPanswer(200, "Message title params were changed")
 
