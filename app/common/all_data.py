@@ -2,6 +2,7 @@ from crud.anime import AnimeData
 from crud.auctions import AuctionsData
 from crud.challenges import ChallengesData
 from crud.credits import CreditsData
+from crud.data_params import DataParamsData
 from crud.games import GamesData
 from crud.lore import LoreData
 from crud.marathons import MarathonsData
@@ -15,16 +16,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 class AllData:
     def __init__(self) -> None:
-        self.TIMECODE_MESSAGE = "Saved"
-
-        self.SITE_MESSAGES_ENABLED = False
-        self.SITE_MESSAGES_TITLE_TEXT = ""
-        self.SITE_MESSAGES_TITLE_EDITABLE = False
+        self.DATAPARAMS = DataParamsData()
 
         self.SAVE_CHOICES = TwitchBotList("save_choices")
-
-        self.BITE_CHEAT_STREAMER_PERCENT = 0
-        self.BITE_CHEAT_DEFENSE_PERCENT = 0
 
         self.BITE_IGNORE_LIST = TwitchBotList("bite_ignore_list")
         self.BITE_ACTIONS = TwitchBotList("bite_actions")
@@ -47,6 +41,8 @@ class AllData:
         self.SOCIALS = SocialsData()
 
     async def setup(self, session: AsyncSession) -> None:
+        await self.DATAPARAMS.setup(session)
+
         await self.SAVE_CHOICES.setup(session)
 
         await self.BITE_IGNORE_LIST.setup(session)

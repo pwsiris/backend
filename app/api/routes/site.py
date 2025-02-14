@@ -3,7 +3,9 @@ from api.answers import HTTPanswer
 from api.verification import login_admin_required, token_messages_required
 from common.all_data import all_data
 from common.config import cfg
+from db.common import get_session
 from fastapi import APIRouter, Depends
+from schemas import data_params as schema_data_params
 from schemas import site as schema_site
 
 router = APIRouter()
@@ -11,7 +13,7 @@ router = APIRouter()
 
 @router.post("/message", dependencies=[Depends(token_messages_required)])
 async def site_message(message: schema_site.Message):
-    if not all_data.SITE_MESSAGES_ENABLED:
+    if not all_data.DATAPARAMS.get("SITE_MESSAGES_ENABLED"):
         return HTTPanswer(200, "DISABLED")
 
     async with httpx.AsyncClient() as ac:
@@ -31,15 +33,38 @@ async def site_message(message: schema_site.Message):
 
 
 @router.put("/message", dependencies=[Depends(login_admin_required)])
-async def site_message_enabled(enabled: schema_site.Enabled):
-    all_data.SITE_MESSAGES_ENABLED = enabled.value
+async def site_message_enabled(
+    enabled: schema_site.Enabled, session=Depends(get_session)
+):
+    await all_data.DATAPARAMS.update(
+        session,
+        [
+            schema_data_params.Element(
+                name="SITE_MESSAGES_ENABLED", value_bool=enabled.value
+            )
+        ],
+    )
     return HTTPanswer(200, f"Set to {enabled.value}")
 
 
 @router.put("/message/title", dependencies=[Depends(login_admin_required)])
-async def update_message_title(title: schema_site.Title):
-    all_data.SITE_MESSAGES_TITLE_TEXT = title.text
-    all_data.SITE_MESSAGES_TITLE_EDITABLE = title.editable
+async def update_message_title(title: schema_site.Title, session=Depends(get_session)):
+    await all_data.DATAPARAMS.update(
+        session,
+        [
+            schema_data_params.Element(
+                name="SITE_MESSAGES_TITLE_TEXT", value_str=title.text
+            )
+        ],
+    )
+    await all_data.DATAPARAMS.update(
+        session,
+        [
+            schema_data_params.Element(
+                name="SITE_MESSAGES_TITLE_EDITABLE", value_str=title.editable
+            )
+        ],
+    )
     return HTTPanswer(200, "Message title params were changed")
 
 
@@ -48,7 +73,7 @@ async def get_message_title():
     return HTTPanswer(
         200,
         {
-            "text": all_data.SITE_MESSAGES_TITLE_TEXT,
-            "editable": all_data.SITE_MESSAGES_TITLE_EDITABLE,
+            "text": all_data.DATAPARAMS.get("SITE_MESSAGES_TITLE_TEXT"),
+            "editable": all_data.DATAPARAMS.get("SITE_MESSAGES_TITLE_EDITABLE"),
         },
     )

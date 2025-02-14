@@ -3,6 +3,7 @@ from api.verification import login_admin_required
 from common.all_data import all_data
 from db.common import get_session
 from fastapi import APIRouter, Depends
+from schemas import data_params as schema_data_params
 from schemas import merch as schema_merch
 
 router = APIRouter()
@@ -59,15 +60,23 @@ async def delete_merch(
 @router.get("/reset", dependencies=[Depends(login_admin_required)])
 async def reset_merch(session=Depends(get_session)):
     await all_data.MERCH.reset(session)
+    await all_data.DATAPARAMS.update(
+        session, [schema_data_params.Element(name="MERCH_STATUS", value_str="")]
+    )
     return HTTPanswer(200, "Merch was erased")
 
 
 @router.put("/status", dependencies=[Depends(login_admin_required)])
-async def change_status_merch(status: schema_merch.Status):
-    all_data.MERCH.set_status(status.status)
+async def change_status_merch(
+    status: schema_merch.Status, session=Depends(get_session)
+):
+    await all_data.DATAPARAMS.update(
+        session,
+        [schema_data_params.Element(name="MERCH_STATUS", value_str=status.status)],
+    )
     return HTTPanswer(200, "Merch status was updated")
 
 
 @router.get("/status")
 async def get_status_merch():
-    return HTTPanswer(200, all_data.MERCH.get_status())
+    return HTTPanswer(200, all_data.DATAPARAMS.get("MERCH_STATUS"))

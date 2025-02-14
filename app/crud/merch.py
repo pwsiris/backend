@@ -16,7 +16,6 @@ from sqlalchemy.sql import text
 
 class MerchData:
     def __init__(self) -> None:
-        self.status = ""
         self.data = {}
         self.sorted_list = []
         self.lock = asyncio.Lock()
@@ -37,7 +36,6 @@ class MerchData:
                         f"TRUNCATE TABLE {SCHEMA}.{Merch.__table__.name} RESTART IDENTITY;"
                     )
                 )
-            self.status = ""
             self.data = {}
             self.sorted_list = []
 
@@ -267,9 +265,3 @@ class MerchData:
                     },
                 )
         return self.sorted_list
-
-    def set_status(self, status) -> None:
-        self.status = status
-
-    def get_status(self) -> str:
-        return self.status

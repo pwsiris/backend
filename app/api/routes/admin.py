@@ -50,16 +50,16 @@ async def get_dump():
             zip_file.writestr(f"{name}.txt", data)
 
         for name in (
-            "socials",
             "anime",
-            "games",
+            "auctions",
             "challenges",
+            "credits",
+            "dataparams" "games",
             "lore",
             "marathons",
-            "roulette",
             "merch",
-            "auctions",
-            "credits",
+            "roulette",
+            "socials",
         ):
             data = await getattr(all_data, name.upper()).get_all(raw=True)
             zip_file.writestr(
