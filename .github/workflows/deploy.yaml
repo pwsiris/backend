@@ -1,5 +1,5 @@
 name: Build and deploy app
-run-name: Build and deploy app from branch ${{ github.ref_name }} to ${{ inputs.target }} env with ${{ inputs.docker_port }} port
+run-name: Build and deploy app to ${{ inputs.target }} env with ${{ inputs.docker_port }} port
 
 on:
   workflow_dispatch:
