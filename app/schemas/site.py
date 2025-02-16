@@ -8,6 +8,7 @@ class Message(BaseModel):
 
 class Title(BaseModel):
     text: str
+    visible: bool
     editable: bool
 
 

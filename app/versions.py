@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 
 import yaml
 
-APP_VERSION = "2.25.0"
+APP_VERSION = "2.26.0"
 
 APP_VERSION_DETAILS = {}
 with open("config/versions.yaml", "r") as f:

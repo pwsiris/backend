@@ -16,6 +16,7 @@ class DataParamsData:
         "TIMECODE_MESSAGE": {"value_str": "Saved"},
         "SITE_MESSAGES_ENABLED": {"value_bool": False},
         "SITE_MESSAGES_TITLE_TEXT": {"value_str": ""},
+        "SITE_MESSAGES_TITLE_VISIBLE": {"value_bool": False},
         "SITE_MESSAGES_TITLE_EDITABLE": {"value_bool": False},
         "BITE_CHEAT_STREAMER_PERCENT": {"value_int": 0},
         "BITE_CHEAT_DEFENSE_PERCENT": {"value_int": 0},

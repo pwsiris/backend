@@ -61,6 +61,14 @@ async def update_message_title(title: schema_site.Title, session=Depends(get_ses
         session,
         [
             schema_data_params.Element(
+                name="SITE_MESSAGES_TITLE_VISIBLE", value_bool=title.visible
+            )
+        ],
+    )
+    await all_data.DATAPARAMS.update(
+        session,
+        [
+            schema_data_params.Element(
                 name="SITE_MESSAGES_TITLE_EDITABLE", value_str=title.editable
             )
         ],
@@ -74,6 +82,7 @@ async def get_message_title():
         200,
         {
             "text": all_data.DATAPARAMS.get("SITE_MESSAGES_TITLE_TEXT"),
+            "visible": all_data.DATAPARAMS.get("SITE_MESSAGES_TITLE_VISIBLE"),
             "editable": all_data.DATAPARAMS.get("SITE_MESSAGES_TITLE_EDITABLE"),
         },
     )
