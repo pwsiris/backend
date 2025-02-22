@@ -238,8 +238,8 @@ class GamesData:
                     ):
                         if tag == "id" and item[tag] >= self.non_steam_border:
                             continue
-                        if tag == "link" and "store.steampowered.com" not in item.get(
-                            tag, ""
+                        if tag == "link" and "store.steampowered.com" in (
+                            item.get(tag) or ""
                         ):
                             continue
                         if tag == "picture" and not item.get(tag, "").startswith(
