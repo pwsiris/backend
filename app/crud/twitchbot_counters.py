@@ -84,8 +84,13 @@ class TwitchBotCounter:
             return self.data.get(name, {}).get("count", default)
 
     async def get_all(self, raw: bool = False) -> str:
+        sep = ", "
+        if raw:
+            sep = "\n"
         async with self.lock:
-            return ", ".join(name.upper() for name in self.data.keys())
+            return sep.join(
+                f"{name}: {info['count']}" for name, info in self.data.items()
+            )
 
     async def update(
         self, session: AsyncSession, name: str, with_delay: bool, increment: int = 1

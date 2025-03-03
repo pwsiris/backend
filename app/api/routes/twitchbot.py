@@ -117,7 +117,7 @@ async def counter(
             except Exception:
                 return PlainAnswer("В команде нет корректного числа")
 
-    if (value := await counter.get_value(description_str, None)) != None:
+    if (value := await counter.get_value(description_str.lower(), None)) != None:
         return PlainAnswer(f"{prefix} в {description_str}: {value}")
 
     if _list_get(description, 0) in ("list", "список"):
