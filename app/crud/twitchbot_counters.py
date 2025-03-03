@@ -83,7 +83,7 @@ class TwitchBotCounter:
         async with self.lock:
             return self.data.get(name, {}).get("count", default)
 
-    async def get_all(self, raw: bool) -> str:
+    async def get_all(self, raw: bool = False) -> str:
         async with self.lock:
             return ", ".join(name.upper() for name in self.data.keys())
 
@@ -108,10 +108,8 @@ class TwitchBotCounter:
                         TwitchBotCounters.name == name,
                         TwitchBotCounters.type == self.type,
                     )
-                    .values(
-                        value=(self.data[name]["count"] + increment), updated=updated
-                    )
+                    .values(value=(self.data[name]["count"] + increment), updated=now)
                 )
                 self.data[name]["count"] += increment
-                self.data[name]["updated"] = updated
+                self.data[name]["updated"] = now
             return str(self.data[name]["count"])
