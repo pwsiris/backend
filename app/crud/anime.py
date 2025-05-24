@@ -348,6 +348,7 @@ class AnimeData:
                         "score",
                         "added_time",
                         "completed_time",
+                        "picture_mode",
                     ):
                         if tag == "id" and item[tag] >= self.non_mal_border:
                             for t in ("link", "picture", "type", "episodes"):

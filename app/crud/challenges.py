@@ -153,6 +153,7 @@ class ChallengesData:
                         "id",
                         "name",
                         "picture",
+                        "picture_mode",
                         "order_by",
                         "description",
                         "comment",

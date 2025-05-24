@@ -16,6 +16,7 @@ class NewElement(BaseModel):
 
     link: str | None = None
     picture: str | None = None
+    picture_mode: str | None = "landscape"
 
 
 class DeletedElement(BaseModel):
@@ -29,6 +30,7 @@ class UpdatedElement(BaseModel):
     subname: str | None = None
     link: str | None = None
     picture: str | None = None
+    picture_mode: str | None = None
     status: str | None = None
     genre: str | None = None
     type: str | None = None

@@ -228,6 +228,7 @@ class GamesData:
                         "subname",
                         "link",
                         "picture",
+                        "picture_mode",
                         "status",
                         "genre",
                         "type",

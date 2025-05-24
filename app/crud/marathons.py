@@ -349,6 +349,7 @@ class MarathonsData:
                         "date_start",
                         "date_end",
                         "picture",
+                        "picture_mode",
                         "rules",
                         "records",
                         "order",
