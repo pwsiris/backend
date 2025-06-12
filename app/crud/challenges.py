@@ -162,6 +162,8 @@ class ChallengesData:
                         "price",
                         "records",
                     ):
+                        if tag == "picture_mode" and item[tag] == "landscape":
+                            continue
                         item_record[tag] = item[tag]
                     result.append(item_record)
 
