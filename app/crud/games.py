@@ -243,7 +243,7 @@ class GamesData:
                             item.get(tag) or ""
                         ):
                             continue
-                        if tag == "picture" and not item.get(tag, "").startswith(
+                        if tag == "picture" and not (item.get(tag) or "").startswith(
                             "/static"
                         ):
                             continue
