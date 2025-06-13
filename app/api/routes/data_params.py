@@ -10,7 +10,7 @@ router = APIRouter()
 
 @router.get("/{name}")
 async def get_data_param(name):
-    return HTTPanswer(200, all_data.DATAPARAMS.get(name))
+    return HTTPanswer(200, all_data.DATA_PARAMS.get(name))
 
 
 @router.post("", dependencies=[Depends(login_admin_required)])
@@ -19,7 +19,7 @@ async def add_data_params(
     elements: list[schema_data_params.Element],
     session=Depends(get_session),
 ):
-    return HTTPanswer(201, await all_data.DATAPARAMS.add(session, elements))
+    return HTTPanswer(201, await all_data.DATA_PARAMS.add(session, elements))
 
 
 @router.put("", dependencies=[Depends(login_admin_required)])
@@ -32,7 +32,7 @@ async def update_data_params(
         200,
         {
             "status": "Update info",
-            "info": await all_data.DATAPARAMS.update(session, elements),
+            "info": await all_data.DATA_PARAMS.update(session, elements),
         },
     )
 
@@ -47,12 +47,12 @@ async def delete_data_params(
         200,
         {
             "status": "Delete info",
-            "info": await all_data.DATAPARAMS.delete(session, elements),
+            "info": await all_data.DATA_PARAMS.delete(session, elements),
         },
     )
 
 
 @router.get("/reset", dependencies=[Depends(login_admin_required)])
 async def reset_data_params(session=Depends(get_session)):
-    await all_data.DATAPARAMS.reset(session)
+    await all_data.DATA_PARAMS.reset(session)
     return HTTPanswer(200, "Data Params were erased")
