@@ -349,6 +349,7 @@ class MarathonsData:
                         "date_start",
                         "date_end",
                         "picture",
+                        "picture_mode",
                         "rules",
                         "records",
                         "order",
@@ -356,13 +357,15 @@ class MarathonsData:
                         "marathon_id",
                         "steam_id",
                     ):
-                        if tag == "picture" and not item.get(tag, "").startswith(
+                        if tag == "picture" and not (item.get(tag) or "").startswith(
                             "/static"
                         ):
                             continue
                         if tag == "link" and "store.steampowered.com" in (
                             item.get(tag) or ""
                         ):
+                            continue
+                        if tag == "picture_mode" and item[tag] == "landscape":
                             continue
                         item_record[tag] = item[tag]
                     result.append(item_record)

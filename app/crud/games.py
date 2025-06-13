@@ -228,6 +228,7 @@ class GamesData:
                         "subname",
                         "link",
                         "picture",
+                        "picture_mode",
                         "status",
                         "genre",
                         "type",
@@ -242,9 +243,11 @@ class GamesData:
                             item.get(tag) or ""
                         ):
                             continue
-                        if tag == "picture" and not item.get(tag, "").startswith(
+                        if tag == "picture" and not (item.get(tag) or "").startswith(
                             "/static"
                         ):
+                            continue
+                        if tag == "picture_mode" and item[tag] == "landscape":
                             continue
                         item_record[tag] = item[tag]
                     result.append(item_record)

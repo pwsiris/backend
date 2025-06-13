@@ -19,6 +19,7 @@ class NewElement(BaseModel):
     type: str | None = None
     episodes: int | None = None
     picture: str | None = None
+    picture_mode: str | None = "portrait"
 
 
 class DeletedElement(BaseModel):
@@ -37,6 +38,7 @@ class UpdatedElement(BaseModel):
     type: str | None = None
     episodes: int | None = None
     picture: str | None = None
+    picture_mode: str | None = None
     score: int | None = None
     status: str | None = None
     added_time: datetime | None = None

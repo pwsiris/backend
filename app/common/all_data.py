@@ -16,7 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 class AllData:
     def __init__(self) -> None:
-        self.DATAPARAMS = DataParamsData()
+        self.DATA_PARAMS = DataParamsData()
 
         self.SAVE_CHOICES = TwitchBotList("save_choices")
 
@@ -41,7 +41,7 @@ class AllData:
         self.SOCIALS = SocialsData()
 
     async def setup(self, session: AsyncSession) -> None:
-        await self.DATAPARAMS.setup(session)
+        await self.DATA_PARAMS.setup(session)
 
         await self.SAVE_CHOICES.setup(session)
 

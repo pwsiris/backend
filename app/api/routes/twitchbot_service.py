@@ -14,7 +14,7 @@ router = APIRouter()
 async def timecode_text(
     new_answer: schema_twitchbot.TimecodeAnswer, session=Depends(get_session)
 ):
-    await all_data.DATAPARAMS.update(
+    await all_data.DATA_PARAMS.update(
         session,
         [
             schema_data_params.Element(
@@ -28,7 +28,7 @@ async def timecode_text(
 @router.put("/cheats", dependencies=[Depends(login_admin_required)])
 async def cheating(cheats: schema_twitchbot.Cheats, session=Depends(get_session)):
     if cheats.streamer != None:
-        await all_data.DATAPARAMS.update(
+        await all_data.DATA_PARAMS.update(
             session,
             [
                 schema_data_params.Element(
@@ -37,7 +37,7 @@ async def cheating(cheats: schema_twitchbot.Cheats, session=Depends(get_session)
             ],
         )
     if cheats.defense != None:
-        await all_data.DATAPARAMS.update(
+        await all_data.DATA_PARAMS.update(
             session,
             [
                 schema_data_params.Element(
@@ -53,8 +53,8 @@ async def cheating_info():
     return HTTPanswer(
         200,
         {
-            "streamer": all_data.DATAPARAMS.get("BITE_CHEAT_STREAMER_PERCENT"),
-            "defense": all_data.DATAPARAMS.get("BITE_CHEAT_DEFENSE_PERCENT"),
+            "streamer": all_data.DATA_PARAMS.get("BITE_CHEAT_STREAMER_PERCENT"),
+            "defense": all_data.DATA_PARAMS.get("BITE_CHEAT_DEFENSE_PERCENT"),
         },
     )
 

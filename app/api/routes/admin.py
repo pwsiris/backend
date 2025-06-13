@@ -54,7 +54,7 @@ async def get_dump():
             "auctions",
             "challenges",
             "credits",
-            "dataparams",
+            "data_params",
             "games",
             "lore",
             "marathons",

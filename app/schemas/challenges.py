@@ -5,6 +5,7 @@ from schemas._records import Records
 class NewElement(BaseModel):
     name: str
     picture: str | None = None
+    picture_mode: str | None = "landscape"
     order_by: str | None = None
     description: str | None = None
     comment: str | None = None
@@ -22,6 +23,7 @@ class UpdatedElement(BaseModel):
     id: int
     name: str | None = None
     picture: str | None = None
+    picture_mode: str | None = None
     order_by: str | None = None
     description: str | None = None
     comment: str | None = None

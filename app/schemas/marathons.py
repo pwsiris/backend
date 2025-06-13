@@ -12,6 +12,7 @@ class NewElement(BaseModel):
     date_start: ddate | None = None
     date_end: ddate | None = None
     picture: str | None = None
+    picture_mode: str | None = "landscape"
     rules: list[str] | None = None
     records: list[Records] | None = None
     order: int | None = None
@@ -29,6 +30,7 @@ class UpdatedElement(BaseModel):
     date_start: ddate | None = None
     date_end: ddate | None = None
     picture: str | None = None
+    picture_mode: str | None = None
     rules: list[str] | None = None
     records: list[Records] | None = None
     order: int | None = None
