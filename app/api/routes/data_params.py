@@ -8,6 +8,12 @@ from schemas import data_params as schema_data_params
 router = APIRouter()
 
 
+@router.get("/reset", dependencies=[Depends(login_admin_required)])
+async def reset_data_params(session=Depends(get_session)):
+    await all_data.DATA_PARAMS.reset(session)
+    return HTTPanswer(200, "Data Params were erased")
+
+
 @router.get("/{name}")
 async def get_data_param(name):
     return HTTPanswer(200, all_data.DATA_PARAMS.get(name))
@@ -50,9 +56,3 @@ async def delete_data_params(
             "info": await all_data.DATA_PARAMS.delete(session, elements),
         },
     )
-
-
-@router.get("/reset", dependencies=[Depends(login_admin_required)])
-async def reset_data_params(session=Depends(get_session)):
-    await all_data.DATA_PARAMS.reset(session)
-    return HTTPanswer(200, "Data Params were erased")
