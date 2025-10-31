@@ -165,3 +165,4 @@ config/config.yaml
 config/versions.yaml
 scripts/
 my_scripts/
+tests/

@@ -15,8 +15,8 @@ from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql import text
 
-UNIX_ZERO = datetime.fromisoformat("1970-01-01 00:00+00:00")
-UNIX_BELOW_ZERO = datetime.fromisoformat("1969-12-31 23:59:59+00:00")
+UNIX_ZERO_DATETIME = datetime.fromisoformat("1970-01-01 00:00+00:00")
+UNIX_BELOW_ZERO_DATETIME = datetime.fromisoformat("1969-12-31 23:59:59+00:00")
 
 
 class AnimeData:
@@ -26,6 +26,7 @@ class AnimeData:
         self.lock = asyncio.Lock()
         self.status_mapping = {
             "Смотрим": 1,
+            "Смотрю": 1,
             "": 2,
             "Просмотрено": 3,
             "Заброшено": 3,
@@ -126,8 +127,8 @@ class AnimeData:
                     or anime["status"] == "Заброшено"
                 ):
                     updated_data["status"] = "Заброшено"
-                    if (anime["completed_time"] or UNIX_ZERO) > (
-                        curr_series["completed_time"] or UNIX_ZERO
+                    if (anime["completed_time"] or UNIX_ZERO_DATETIME) > (
+                        curr_series["completed_time"] or UNIX_ZERO_DATETIME
                     ):
                         updated_data["completed_time"] = anime["completed_time"]
                     else:
@@ -137,8 +138,8 @@ class AnimeData:
                     if anime["completed_time"] > curr_series["completed_time"]:
                         updated_data["completed_time"] = anime["completed_time"]
 
-                if (anime["added_time"] or UNIX_ZERO) < (
-                    curr_series["added_time"] or UNIX_ZERO
+                if (anime["added_time"] or UNIX_ZERO_DATETIME) < (
+                    curr_series["added_time"] or UNIX_ZERO_DATETIME
                 ):
                     updated_data["added_time"] = anime["added_time"]
 
@@ -173,7 +174,9 @@ class AnimeData:
                     self.status_mapping.get(anime["status"] or "", 4),
                     int(
                         (
-                            anime["completed_time"] or anime["added_time"] or UNIX_ZERO
+                            anime["completed_time"]
+                            or anime["added_time"]
+                            or UNIX_ZERO_DATETIME
                         ).timestamp()
                     ),
                 ),
@@ -185,8 +188,8 @@ class AnimeData:
                 all_anime,
                 key=lambda anime: (
                     self.status_mapping.get(anime["status"] or "", 4),
-                    -int((anime["completed_time"] or UNIX_ZERO).timestamp())
-                    or int((anime["added_time"] or UNIX_ZERO).timestamp()),
+                    -int((anime["completed_time"] or UNIX_ZERO_DATETIME).timestamp())
+                    or int((anime["added_time"] or UNIX_ZERO_DATETIME).timestamp()),
                 ),
             ),
             custom_encoder={
@@ -221,7 +224,7 @@ class AnimeData:
 
                     dicted_element["added_time"] = (
                         (dicted_element["added_time"] or datetime.now(timezone.utc))
-                        if dicted_element["added_time"] != UNIX_BELOW_ZERO
+                        if dicted_element["added_time"] != UNIX_BELOW_ZERO_DATETIME
                         else None
                     )
                     dicted_element["completed_time"] = (
@@ -310,9 +313,9 @@ class AnimeData:
                     dicted_element["episodes"] = None
                 if dicted_element.get("score") == -1:
                     dicted_element["score"] = None
-                if dicted_element.get("completed_time") == UNIX_BELOW_ZERO:
+                if dicted_element.get("completed_time") == UNIX_BELOW_ZERO_DATETIME:
                     dicted_element["completed_time"] = None
-                if dicted_element.get("added_time") == UNIX_BELOW_ZERO:
+                if dicted_element.get("added_time") == UNIX_BELOW_ZERO_DATETIME:
                     dicted_element["added_time"] = None
 
                 for key, value in dicted_element.items():
