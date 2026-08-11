@@ -173,4 +173,4 @@ class DataParamsData:
                     item_record[tag] = item.get(tag)
                 result.append(item_record)
 
-            return (sorted(result, key=lambda element: element["id"]),)
+            return sorted(result, key=lambda element: element["id"])
