@@ -357,21 +357,11 @@ class MarathonsData:
                         "marathon_id",
                         "steam_id",
                     ):
-                        if tag == "picture" and not (item.get(tag) or "").startswith(
-                            "/static"
-                        ):
-                            continue
-                        if tag == "link" and "store.steampowered.com" in (
-                            item.get(tag) or ""
-                        ):
-                            continue
-                        if tag == "picture_mode" and item[tag] == "landscape":
-                            continue
-                        item_record[tag] = item[tag]
+                        item_record[tag] = item.get(tag)
                     result.append(item_record)
 
                 return jsonable_encoder(
-                    result,
+                    sorted(result, key=lambda element: element["id"]),
                     custom_encoder={
                         datetime: lambda datetime_obj: (
                             datetime_obj.isoformat()

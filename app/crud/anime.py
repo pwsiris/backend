@@ -344,25 +344,24 @@ class AnimeData:
                         "id",
                         "series",
                         "name",
-                        "order_by",
-                        "voice_acting",
+                        "link",
+                        "type",
+                        "episodes",
+                        "picture",
+                        "picture_mode",
                         "status",
-                        "comment",
                         "score",
+                        "comment",
+                        "voice_acting",
+                        "order_by",
                         "added_time",
                         "completed_time",
-                        "picture_mode",
                     ):
-                        if tag == "id" and item[tag] >= self.non_mal_border:
-                            for t in ("link", "picture", "type", "episodes"):
-                                item_record[t] = item[t]
-                        if tag == "picture_mode" and item[tag] == "portrait":
-                            continue
-                        item_record[tag] = item[tag]
+                        item_record[tag] = item.get(tag)
                     result.append(item_record)
 
                 return jsonable_encoder(
-                    result,
+                    sorted(result, key=lambda element: element["id"]),
                     custom_encoder={
                         datetime: lambda datetime_obj: (
                             datetime_obj.isoformat()

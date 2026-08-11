@@ -117,7 +117,7 @@ class TwitchBotList:
     async def get_all(self, raw: bool) -> dict[int, str]:
         async with self.lock:
             if raw:
-                return "|||||".join(self.data.values())
+                return "|||||".join(sorted(self.data.values()))
             return self.data
 
     def get_random(self) -> str:

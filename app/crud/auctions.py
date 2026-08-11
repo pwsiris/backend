@@ -310,11 +310,11 @@ class AuctionsData:
                         "order_by",
                         "auction_id",
                     ):
-                        item_record[tag] = item[tag]
+                        item_record[tag] = item.get(tag)
                     result.append(item_record)
 
                 return jsonable_encoder(
-                    result,
+                    sorted(result, key=lambda element: element["id"]),
                     custom_encoder={
                         datetime: lambda datetime_obj: (
                             datetime_obj.isoformat()
