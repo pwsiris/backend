@@ -2,6 +2,7 @@ from api.routes.admin import router as admin_router
 from api.routes.anime import router as anime_router
 from api.routes.auctions import router as auctions_router
 from api.routes.challenges import router as challenges_router
+from api.routes.cinema import router as cinema_router
 from api.routes.credits import router as credits_router
 from api.routes.data_params import router as data_params_router
 from api.routes.games import router as games_router
@@ -22,6 +23,7 @@ routers.include_router(admin_router, prefix="/admin")
 routers.include_router(anime_router, prefix="/anime")
 routers.include_router(auctions_router, prefix="/auctions")
 routers.include_router(challenges_router, prefix="/challenges")
+routers.include_router(cinema_router, prefix="/cinema")
 routers.include_router(credits_router, prefix="/credits")
 routers.include_router(data_params_router, prefix="/data_params")
 routers.include_router(games_router, prefix="/games")

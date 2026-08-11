@@ -185,3 +185,17 @@ class DataParams(Base):
     value_int: Mapped[int] = mapped_column(nullable=True)
     value_float: Mapped[float] = mapped_column(nullable=True)
     value_str: Mapped[str] = mapped_column(nullable=True)
+
+
+class Cinema(Base):
+    __tablename__ = "cinema"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(nullable=False)
+    subname: Mapped[str] = mapped_column(nullable=True)
+    type: Mapped[str] = mapped_column(nullable=False)
+    event: Mapped[str] = mapped_column(nullable=True)
+    comment: Mapped[str] = mapped_column(nullable=True)
+    date: Mapped[ddate] = mapped_column(nullable=True)
+    status: Mapped[str] = mapped_column(nullable=True)
+    order_by: Mapped[str] = mapped_column(nullable=True)

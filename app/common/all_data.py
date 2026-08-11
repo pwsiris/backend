@@ -1,6 +1,7 @@
 from crud.anime import AnimeData
 from crud.auctions import AuctionsData
 from crud.challenges import ChallengesData
+from crud.cinema import CinemaData
 from crud.credits import CreditsData
 from crud.data_params import DataParamsData
 from crud.games import GamesData
@@ -32,6 +33,7 @@ class AllData:
         self.ANIME = AnimeData()
         self.AUCTIONS = AuctionsData()
         self.CHALLENGES = ChallengesData()
+        self.CINEMA = CinemaData()
         self.CREDITS = CreditsData()
         self.GAMES = GamesData()
         self.LORE = LoreData()
@@ -57,6 +59,7 @@ class AllData:
         await self.ANIME.setup(session)
         await self.AUCTIONS.setup(session)
         await self.CHALLENGES.setup(session)
+        await self.CINEMA.setup(session)
         await self.CREDITS.setup(session)
         await self.GAMES.setup(session)
         await self.LORE.setup(session)
