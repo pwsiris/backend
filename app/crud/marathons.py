@@ -357,12 +357,12 @@ class MarathonsData:
                         "marathon_id",
                         "steam_id",
                     ):
-                        if tag == "rules" and len(item.get(tag, [])) > 0:
+                        if tag == "rules" and len(item.get(tag) or []) > 0:
                             item_record[tag] = sorted(item.get(tag))
                             continue
-                        if tag == "records" and len(item.get(tag, [])) > 0:
+                        if tag == "records" and len(item.get(tag) or []) > 0:
                             elements = []
-                            for element in item.get(tag, []):
+                            for element in item.get(tag):
                                 element_record = {}
                                 for etag in ("order", "name", "url"):
                                     element_record[etag] = element.get(etag)
@@ -370,9 +370,9 @@ class MarathonsData:
                             item_record[tag] = sorted(
                                 elements,
                                 key=lambda element: (
-                                    element.get("order", 0),
-                                    element.get("name", ""),
-                                    element.get("url", ""),
+                                    element.get("order") or 0,
+                                    element.get("name") or "",
+                                    element.get("url") or "",
                                 ),
                             )
                             continue
