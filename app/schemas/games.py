@@ -1,5 +1,7 @@
-from pydantic import BaseModel
-from schemas._records import Records
+from typing import Annotated
+
+from pydantic import AfterValidator, BaseModel
+from schemas._records import Records, check_records_list_order
 
 
 class NewElement(BaseModel):
@@ -9,11 +11,12 @@ class NewElement(BaseModel):
     status: str | None = None
     genre: str | None = None
     type: str | None = None
-    records: list[Records] | None = None
+    records: Annotated[
+        list[Records] | None, AfterValidator(check_records_list_order)
+    ] = None
     comment: str | None = None
     gift_by: str | None = None
     order_by: str | None = None
-
     link: str | None = None
     picture: str | None = None
     picture_mode: str | None = "landscape"
@@ -34,7 +37,9 @@ class UpdatedElement(BaseModel):
     status: str | None = None
     genre: str | None = None
     type: str | None = None
-    records: list[Records] | None = None
+    records: Annotated[
+        list[Records] | None, AfterValidator(check_records_list_order)
+    ] = None
     comment: str | None = None
     gift_by: str | None = None
     order_by: str | None = None

@@ -251,6 +251,22 @@ class CreditsData:
                         "creators",
                         "order",
                     ):
+                        if tag == "creators" and len(item.get(tag, [])) > 0:
+                            elements = []
+                            for element in item.get(tag, []):
+                                element_record = {}
+                                for etag in ("name", "link", "role"):
+                                    element_record[etag] = element.get(etag)
+                                elements.append(element_record)
+                            item_record[tag] = sorted(
+                                elements,
+                                key=lambda element: (
+                                    element.get("name", ""),
+                                    element.get("link", ""),
+                                    element.get("role", ""),
+                                ),
+                            )
+                            continue
                         item_record[tag] = item.get(tag)
                     result.append(item_record)
 

@@ -237,6 +237,22 @@ class GamesData:
                         "gift_by",
                         "order_by",
                     ):
+                        if tag == "records" and len(item.get(tag, [])) > 0:
+                            elements = []
+                            for element in item.get(tag, []):
+                                element_record = {}
+                                for etag in ("order", "name", "url"):
+                                    element_record[etag] = element.get(etag)
+                                elements.append(element_record)
+                            item_record[tag] = sorted(
+                                elements,
+                                key=lambda element: (
+                                    element.get("order", 0),
+                                    element.get("name", ""),
+                                    element.get("url", ""),
+                                ),
+                            )
+                            continue
                         item_record[tag] = item.get(tag)
                     result.append(item_record)
 
