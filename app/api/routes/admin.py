@@ -8,10 +8,29 @@ from api.verification import login_admin_required
 from common.all_data import all_data
 from common.config import cfg
 from common.errors import HTTPabort
-from fastapi import APIRouter, Depends, Response
+from fastapi import APIRouter, Depends, HTTPException, Response
 from schemas import admin as schema_admin
 
 router = APIRouter()
+
+
+@router.post("/login")
+async def check(token: schema_admin.Token):
+    if token.token != cfg.AUTH_ADMIN_TMP_TOKEN:
+        raise HTTPException(status_code=401, detail="NO AUTH")
+    return HTTPanswer(
+        200, "Logged-in", action_cookie="set", token=cfg.AUTH_ADMIN_TMP_TOKEN
+    )
+
+
+@router.get("/me", dependencies=[Depends(login_admin_required)])
+async def get_me():
+    return HTTPanswer(200, "admin")
+
+
+@router.get("/logout", dependencies=[Depends(login_admin_required)])
+async def logout():
+    return HTTPanswer(200, "Logouted", action_cookie="delete")
 
 
 @router.get("/secrets", dependencies=[Depends(login_admin_required)])
