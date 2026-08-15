@@ -19,14 +19,27 @@ def HTTPanswer(
         response.set_cookie(
             key=cfg.AUTH_TOKEN_NAME,
             value=token,
+            max_age=cfg.AUTH_TOKEN_EXPIRE * 24 * 60 * 60,
             path="/",
             domain=cfg.DOMAIN,
             httponly=True,
             secure=(True if cfg.ENV != "dev" else False),
             samesite=("strict" if cfg.ENV != "dev" else "lax"),
+            # samesite=("none" if cfg.ENV != "dev" else "lax")
         )
     elif action_cookie == "delete":
         response.delete_cookie(cfg.AUTH_TOKEN_NAME, path="/", domain=cfg.DOMAIN)
+        # response.set_cookie(
+        #     key=cfg.AUTH_TOKEN_NAME,
+        #     value="wrong_token_value",
+        #     max_age=60,
+        #     path="/",
+        #     domain=cfg.DOMAIN,
+        #     httponly=True,
+        #     secure=(True if cfg.ENV != "dev" else False),
+        #     samesite=("strict" if cfg.ENV != "dev" else "lax"),
+        #     # samesite=("none" if cfg.ENV != "dev" else "lax")
+        # )
 
     return response
 
