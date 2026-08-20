@@ -1,7 +1,8 @@
 from datetime import date as ddate
+from typing import Annotated
 
-from pydantic import BaseModel
-from schemas._records import Records
+from pydantic import AfterValidator, BaseModel
+from schemas._records import Records, check_records_list_order
 
 
 class NewElement(BaseModel):
@@ -14,7 +15,9 @@ class NewElement(BaseModel):
     picture: str | None = None
     picture_mode: str | None = "landscape"
     rules: list[str] | None = None
-    records: list[Records] | None = None
+    records: Annotated[
+        list[Records] | None, AfterValidator(check_records_list_order)
+    ] = None
     order: int | None = None
     link: str | None = None
     marathon_id: int | None = None
@@ -32,7 +35,9 @@ class UpdatedElement(BaseModel):
     picture: str | None = None
     picture_mode: str | None = None
     rules: list[str] | None = None
-    records: list[Records] | None = None
+    records: Annotated[
+        list[Records] | None, AfterValidator(check_records_list_order)
+    ] = None
     order: int | None = None
     link: str | None = None
     marathon_id: int | None = None

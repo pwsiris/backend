@@ -159,4 +159,18 @@ class DataParamsData:
 
     async def get_all(self, raw=False) -> list[dict[str, Any]]:
         async with self.lock:
-            return [row for row in self.raw_data.values()]
+            result = []
+            for item in self.raw_data.values():
+                item_record = {}
+                for tag in (
+                    "id",
+                    "name",
+                    "value_bool",
+                    "value_int",
+                    "value_float",
+                    "value_str",
+                ):
+                    item_record[tag] = item.get(tag)
+                result.append(item_record)
+
+            return sorted(result, key=lambda element: element["id"])

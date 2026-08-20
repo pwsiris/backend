@@ -72,6 +72,7 @@ async def get_dump():
             "anime",
             "auctions",
             "challenges",
+            "cinema",
             "credits",
             "data_params",
             "games",

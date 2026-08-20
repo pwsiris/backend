@@ -251,11 +251,27 @@ class CreditsData:
                         "creators",
                         "order",
                     ):
-                        item_record[tag] = item[tag]
+                        if tag == "creators" and len(item.get(tag) or []) > 0:
+                            elements = []
+                            for element in item.get(tag):
+                                element_record = {}
+                                for etag in ("name", "link", "role"):
+                                    element_record[etag] = element.get(etag)
+                                elements.append(element_record)
+                            item_record[tag] = sorted(
+                                elements,
+                                key=lambda element: (
+                                    element.get("name") or "",
+                                    element.get("link") or "",
+                                    element.get("role") or "",
+                                ),
+                            )
+                            continue
+                        item_record[tag] = item.get(tag)
                     result.append(item_record)
 
                 return jsonable_encoder(
-                    result,
+                    sorted(result, key=lambda element: element["id"]),
                     custom_encoder={
                         datetime: lambda datetime_obj: (
                             datetime_obj.isoformat()

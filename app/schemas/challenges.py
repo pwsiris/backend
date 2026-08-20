@@ -1,5 +1,7 @@
-from pydantic import BaseModel
-from schemas._records import Records
+from typing import Annotated
+
+from pydantic import AfterValidator, BaseModel
+from schemas._records import Records, check_records_list_order
 
 
 class NewElement(BaseModel):
@@ -12,7 +14,9 @@ class NewElement(BaseModel):
     status: str | None = None
     type: str | None = None
     price: str | None = None
-    records: list[Records] | None = None
+    records: Annotated[
+        list[Records] | None, AfterValidator(check_records_list_order)
+    ] = None
 
 
 class DeletedElement(BaseModel):
@@ -30,4 +34,6 @@ class UpdatedElement(BaseModel):
     status: str | None = None
     type: str | None = None
     price: str | None = None
-    records: list[Records] | None = None
+    records: Annotated[
+        list[Records] | None, AfterValidator(check_records_list_order)
+    ] = None

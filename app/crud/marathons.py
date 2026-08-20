@@ -357,21 +357,30 @@ class MarathonsData:
                         "marathon_id",
                         "steam_id",
                     ):
-                        if tag == "picture" and not (item.get(tag) or "").startswith(
-                            "/static"
-                        ):
+                        if tag == "rules" and len(item.get(tag) or []) > 0:
+                            item_record[tag] = sorted(item.get(tag))
                             continue
-                        if tag == "link" and "store.steampowered.com" in (
-                            item.get(tag) or ""
-                        ):
+                        if tag == "records" and len(item.get(tag) or []) > 0:
+                            elements = []
+                            for element in item.get(tag):
+                                element_record = {}
+                                for etag in ("order", "name", "url"):
+                                    element_record[etag] = element.get(etag)
+                                elements.append(element_record)
+                            item_record[tag] = sorted(
+                                elements,
+                                key=lambda element: (
+                                    element.get("order") or 0,
+                                    element.get("name") or "",
+                                    element.get("url") or "",
+                                ),
+                            )
                             continue
-                        if tag == "picture_mode" and item[tag] == "landscape":
-                            continue
-                        item_record[tag] = item[tag]
+                        item_record[tag] = item.get(tag)
                     result.append(item_record)
 
                 return jsonable_encoder(
-                    result,
+                    sorted(result, key=lambda element: element["id"]),
                     custom_encoder={
                         datetime: lambda datetime_obj: (
                             datetime_obj.isoformat()

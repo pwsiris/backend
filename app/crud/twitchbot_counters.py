@@ -84,11 +84,15 @@ class TwitchBotCounter:
             return self.data.get(name, {}).get("count", default)
 
     async def get_all(self, raw: bool = False) -> str:
-        sep = ", "
-        if raw:
-            sep = "\n"
         async with self.lock:
-            return sep.join(
+            if raw:
+                return "\n".join(
+                    f"{name}: {info['count']} ({info['updated'].isoformat().replace('T', ' ') if info['updated'] else ''})"
+                    for name, info in sorted(
+                        self.data.items(), key=lambda element: element[0]
+                    )
+                )
+            return ", ".join(
                 f"{name}: {info['count']}" for name, info in self.data.items()
             )
 
