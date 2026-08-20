@@ -7,6 +7,7 @@ from datetime import time as dtime
 import httpx
 from common.config import cfg
 from common.errors import HTTPabort
+from common.utils import NON_STEAM_ID_BORDER, UNIX_BELOW_ZERO_DATE
 from db.common import get_model_dict
 from db.models import SCHEMA, Marathons
 from fastapi.encoders import jsonable_encoder
@@ -240,6 +241,15 @@ class MarathonsData:
 
                 new_marathon_id = dicted_element.get("marathon_id")
                 if new_marathon_id != None:
+                    if new_marathon_id not in [
+                        id
+                        for id, data in self.data.items()
+                        if data.get("marathon_id") == None
+                    ]:
+                        dicted_element["marathon_id"] = None
+                        new_marathon_id = None
+
+                if new_marathon_id != None:
                     await session.execute(
                         update(Marathons)
                         .where(
@@ -316,10 +326,16 @@ class MarathonsData:
                     else:
                         del dicted_element["order"]
 
-                if dicted_element.get("steam_id"):
+                if 0 < dicted_element.get("steam_id", -1) < NON_STEAM_ID_BORDER:
                     dicted_element.update(
                         await self.check_steam(dicted_element["steam_id"])
                     )
+                elif dicted_element.get("steam_id") == -1:
+                    dicted_element["steam_id"] = None
+
+                for key, value in dicted_element.items():
+                    if value in ("", UNIX_BELOW_ZERO_DATE, []):
+                        dicted_element[key] = None
 
                 async with session.begin():
                     await session.execute(

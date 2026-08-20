@@ -142,6 +142,10 @@ class RouletteData:
                 if dicted_element.get("name") in self.awards:
                     update_info.append("New name not unique")
                     continue
+
+                if dicted_element.get("description") == "":
+                    dicted_element["description"] = None
+
                 async with session.begin():
                     await session.execute(
                         update(RouletteAwards)

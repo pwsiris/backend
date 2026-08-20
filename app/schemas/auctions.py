@@ -1,6 +1,8 @@
 from datetime import date as ddate
+from typing import Annotated
 
-from pydantic import BaseModel
+from common.utils import check_empty
+from pydantic import AfterValidator, BaseModel
 
 
 class NewElement(BaseModel):
@@ -17,7 +19,7 @@ class NewElement(BaseModel):
 
 class UpdatedElement(BaseModel):
     id: int
-    name: str | None = None
+    name: Annotated[str | None, AfterValidator(check_empty)] = None
     date: ddate | None = None
     description: str | None = None
     comment: str | None = None
