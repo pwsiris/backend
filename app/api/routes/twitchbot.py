@@ -75,8 +75,14 @@ async def bite_someone(sender: str, targets: list[str] = Query([])):
         target = cfg.STREAMER
 
     message = f"Однажды тёмной ночью {sender} {action} в {place} к {target} и кусьнул за {body_part}"
-    if target == cfg.BEST_MODERATOR and (
-        random.randint(1, 100) <= all_data.DATA_PARAMS.get("BITE_CHEAT_DEFENSE_PERCENT")
+    if (
+        target == cfg.BEST_MODERATOR
+        and random.randint(1, 100)
+        <= all_data.DATA_PARAMS.get("BITE_CHEAT_DEFENSE_PERCENT")
+    ) or (
+        target != cfg.BEST_MODERATOR
+        and random.randint(1, 100)
+        <= all_data.DATA_PARAMS.get("BITE_CHAT_DEFENSE_PERCENT")
     ):
         message = f"Однажды тёмной ночью {sender} {action} в {place} к {target} и в проваленной попытке укусить получил леща в ответ"
 

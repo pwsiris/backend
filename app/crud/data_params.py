@@ -20,6 +20,7 @@ class DataParamsData:
         "SITE_MESSAGES_TITLE_EDITABLE": {"value_bool": False},
         "BITE_CHEAT_STREAMER_PERCENT": {"value_int": 0},
         "BITE_CHEAT_DEFENSE_PERCENT": {"value_int": 0},
+        "BITE_CHAT_DEFENSE_PERCENT": {"value_int": 0},
         "MERCH_STATUS": {"value_str": ""},
     }
 
