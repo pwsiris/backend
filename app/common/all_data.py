@@ -25,6 +25,7 @@ class AllData:
         self.BITE_ACTIONS = TwitchBotList("bite_actions")
         self.BITE_PLACES = TwitchBotList("bite_places")
         self.BITE_BODY_PARTS = TwitchBotList("bite_body_parts")
+        self.BITE_PARRYING = TwitchBotList("bite_parrying")
 
         self.COUNTER = TwitchBotCounter("count")
         self.COUNTER_DEATH = TwitchBotCounter("death")
@@ -51,6 +52,7 @@ class AllData:
         await self.BITE_ACTIONS.setup(session)
         await self.BITE_PLACES.setup(session)
         await self.BITE_BODY_PARTS.setup(session)
+        await self.BITE_PARRYING.setup(session)
 
         await self.COUNTER.setup(session)
         await self.COUNTER_DEATH.setup(session)
@@ -75,6 +77,7 @@ class AllData:
             "BITE_ACTIONS",
             "BITE_PLACES",
             "BITE_BODY_PARTS",
+            "BITE_PARRYING",
         )
 
     def is_twitchbot(self, name: str) -> bool:
@@ -84,6 +87,7 @@ class AllData:
             "BITE_ACTIONS",
             "BITE_PLACES",
             "BITE_BODY_PARTS",
+            "BITE_PARRYING",
             "COUNTER",
             "COUNTER_DEATH",
             "COUNTER_GLOBAL",

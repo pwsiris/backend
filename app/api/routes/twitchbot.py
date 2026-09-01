@@ -57,9 +57,11 @@ async def bite_someone(sender: str, targets: list[str] = Query([])):
     action = all_data.BITE_ACTIONS.get_random()
     place = all_data.BITE_PLACES.get_random()
     body_part = all_data.BITE_BODY_PARTS.get_random()
+    parry = all_data.BITE_PARRYING.get_random()
 
     target = cfg.STREAMER
-    for variant in targets:
+    random.seed(datetime.now().timestamp())
+    for variant in random.sample(targets, len(targets)):
         if (
             not all_data.BITE_IGNORE_LIST.has(variant.lower().rstrip().lstrip())
             and variant.lower() != sender.lower()
@@ -75,10 +77,16 @@ async def bite_someone(sender: str, targets: list[str] = Query([])):
         target = cfg.STREAMER
 
     message = f"Однажды тёмной ночью {sender} {action} в {place} к {target} и кусьнул за {body_part}"
-    if target == cfg.BEST_MODERATOR and (
-        random.randint(1, 100) <= all_data.DATA_PARAMS.get("BITE_CHEAT_DEFENSE_PERCENT")
+    if (
+        target == cfg.BEST_MODERATOR
+        and random.randint(1, 100)
+        <= all_data.DATA_PARAMS.get("BITE_CHEAT_DEFENSE_PERCENT")
+    ) or (
+        target != cfg.BEST_MODERATOR
+        and random.randint(1, 100)
+        <= all_data.DATA_PARAMS.get("BITE_CHAT_DEFENSE_PERCENT")
     ):
-        message = f"Однажды тёмной ночью {sender} {action} в {place} к {target} и в проваленной попытке укусить получил леща в ответ"
+        message = f"Однажды тёмной ночью {sender} {action} в {place} к {target}{parry}"
 
     return PlainAnswer(message)
 

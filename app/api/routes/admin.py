@@ -59,6 +59,7 @@ async def get_dump():
             "bite_actions",
             "bite_places",
             "bite_body_parts",
+            "bite_parrying",
         ):
             data = await getattr(all_data, name.upper()).get_all(raw=True)
             data_rows = "\n".join(data.split("|||||"))
