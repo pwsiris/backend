@@ -1,6 +1,13 @@
 from datetime import datetime
+from typing import Annotated
 
-from pydantic import BaseModel
+from pydantic import AfterValidator, BaseModel
+
+
+def round_score(value: float | None) -> float | None:
+    if value == None:
+        return value
+    return round(value, 1)
 
 
 class NewElement(BaseModel):
@@ -10,7 +17,7 @@ class NewElement(BaseModel):
     voice_acting: str | None = None
     order_by: str | None = None
     series: str | None = None
-    score: int | None = None
+    score: Annotated[float | None, AfterValidator(round_score)] = None
     status: str | None = None
     added_time: datetime | None = None
     completed_time: datetime | None = None
@@ -39,7 +46,7 @@ class UpdatedElement(BaseModel):
     episodes: int | None = None
     picture: str | None = None
     picture_mode: str | None = None
-    score: int | None = None
+    score: Annotated[float | None, AfterValidator(round_score)] = None
     status: str | None = None
     added_time: datetime | None = None
     completed_time: datetime | None = None

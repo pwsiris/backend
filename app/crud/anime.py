@@ -311,7 +311,7 @@ class AnimeData:
                 # erasing non-string fields
                 if dicted_element.get("episodes") == -1:
                     dicted_element["episodes"] = None
-                if dicted_element.get("score") == -1:
+                if dicted_element.get("score") in (-1, -1.0):
                     dicted_element["score"] = None
                 if dicted_element.get("completed_time") == UNIX_BELOW_ZERO_DATETIME:
                     dicted_element["completed_time"] = None
