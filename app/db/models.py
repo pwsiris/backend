@@ -47,7 +47,7 @@ class Anime(Base):
     episodes: Mapped[int] = mapped_column(nullable=True)
     picture: Mapped[str] = mapped_column(nullable=True)
     picture_mode: Mapped[str] = mapped_column(nullable=False)
-    score: Mapped[int] = mapped_column(nullable=True)
+    score: Mapped[float] = mapped_column(nullable=True)
     status: Mapped[str] = mapped_column(nullable=True)
     added_time: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=True), nullable=True
