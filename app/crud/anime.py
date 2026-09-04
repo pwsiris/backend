@@ -25,6 +25,7 @@ class AnimeData:
         self.status_mapping = {
             "Смотрим": 1,
             "Смотрю": 1,
+            "Просмотр": 1,
             "": 2,
             "Просмотрено": 3,
             "Заброшено": 3,
@@ -116,7 +117,7 @@ class AnimeData:
                 updated_data = {}
 
                 if curr_series["status"] != anime["status"]:
-                    updated_data["status"] = "Смотрим"
+                    updated_data["status"] = "Просмотр"
                     updated_data["completed_time"] = None
 
                 if (
@@ -302,7 +303,12 @@ class AnimeData:
                     dicted_element["completed_time"] = dicted_element.get(
                         "completed_time"
                     ) or datetime.now(timezone.utc)
-                elif dicted_element.get("status") in ("", "Смотрим"):
+                elif dicted_element.get("status") in (
+                    "",
+                    "Смотрим",
+                    "Смотрю",
+                    "Просмотр",
+                ):
                     dicted_element["completed_time"] = None
 
                 # erasing non-string fields
