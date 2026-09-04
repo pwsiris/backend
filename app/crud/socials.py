@@ -175,6 +175,9 @@ class SocialsData:
                     else:
                         del dicted_element["order"]
 
+                if dicted_element.get("type") == "":
+                    dicted_element["type"] = None
+
                 async with session.begin():
                     await session.execute(
                         update(Socials)

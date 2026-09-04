@@ -127,7 +127,7 @@ class ChallengesData:
                 dicted_element = element.model_dump(exclude={"id"}, exclude_none=True)
 
                 for key, value in dicted_element.items():
-                    if value == "":
+                    if value in ("", []):
                         dicted_element[key] = None
 
                 async with session.begin():

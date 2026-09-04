@@ -1,5 +1,6 @@
 from typing import Annotated
 
+from common.utils import check_empty
 from pydantic import AfterValidator, BaseModel
 from schemas._records import Records, check_records_list_order
 
@@ -25,9 +26,9 @@ class DeletedElement(BaseModel):
 
 class UpdatedElement(BaseModel):
     id: int
-    name: str | None = None
+    name: Annotated[str | None, AfterValidator(check_empty)] = None
     picture: str | None = None
-    picture_mode: str | None = None
+    picture_mode: Annotated[str | None, AfterValidator(check_empty)] = None
     order_by: str | None = None
     description: str | None = None
     comment: str | None = None

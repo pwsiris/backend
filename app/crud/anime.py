@@ -7,6 +7,7 @@ from datetime import timezone
 import httpx
 from common.config import cfg
 from common.errors import HTTPabort
+from common.utils import NON_MAL_ID_BORDER, UNIX_BELOW_ZERO_DATETIME, UNIX_ZERO_DATETIME
 from db.common import get_model_dict
 from db.models import SCHEMA, Anime
 from fastapi.encoders import jsonable_encoder
@@ -14,9 +15,6 @@ from schemas import anime as schema_anime
 from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql import text
-
-UNIX_ZERO_DATETIME = datetime.fromisoformat("1970-01-01 00:00+00:00")
-UNIX_BELOW_ZERO_DATETIME = datetime.fromisoformat("1969-12-31 23:59:59+00:00")
 
 
 class AnimeData:
@@ -27,6 +25,7 @@ class AnimeData:
         self.status_mapping = {
             "Смотрим": 1,
             "Смотрю": 1,
+            "Просмотр": 1,
             "": 2,
             "Просмотрено": 3,
             "Заброшено": 3,
@@ -37,14 +36,13 @@ class AnimeData:
             "ova": "OVA",
             "special": "Спецвыпуск",
         }
-        self.non_mal_border = 1000 * 1000 * 1000 * 1000
-        self.non_mal_anime = 1000 * 1000 * 1000 * 1000
+        self.non_mal_anime = int(NON_MAL_ID_BORDER)
 
     async def setup(self, session: AsyncSession) -> None:
         async with session.begin():
             db_data = await session.scalars(select(Anime))
             for row in db_data:
-                if row.id > self.non_mal_border and row.id > self.non_mal_anime:
+                if row.id > NON_MAL_ID_BORDER and row.id > self.non_mal_anime:
                     self.non_mal_anime = row.id
                 self.data[row.id] = get_model_dict(row)
         self.resort()
@@ -60,7 +58,7 @@ class AnimeData:
                 )
             self.data = {}
             self.sorted_list = []
-            self.non_mal_anime = self.non_mal_border
+            self.non_mal_anime = int(NON_MAL_ID_BORDER)
 
     async def get_anime_mal_info(self, id: int) -> dict:
         try:
@@ -119,7 +117,7 @@ class AnimeData:
                 updated_data = {}
 
                 if curr_series["status"] != anime["status"]:
-                    updated_data["status"] = "Смотрим"
+                    updated_data["status"] = "Просмотр"
                     updated_data["completed_time"] = None
 
                 if (
@@ -305,7 +303,12 @@ class AnimeData:
                     dicted_element["completed_time"] = dicted_element.get(
                         "completed_time"
                     ) or datetime.now(timezone.utc)
-                elif dicted_element.get("status") in ("", "Смотрим"):
+                elif dicted_element.get("status") in (
+                    "",
+                    "Смотрим",
+                    "Смотрю",
+                    "Просмотр",
+                ):
                     dicted_element["completed_time"] = None
 
                 # erasing non-string fields
@@ -406,7 +409,7 @@ class AnimeData:
                     result[anime_id] = "Not found"
                     continue
 
-                if anime_id > self.non_mal_border or (
+                if anime_id > NON_MAL_ID_BORDER or (
                     self.data[anime_id]["picture"] or ""
                 ).startswith("/static"):
                     continue

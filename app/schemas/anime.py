@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Annotated
 
+from common.utils import check_empty
 from pydantic import AfterValidator, BaseModel
 
 
@@ -36,7 +37,7 @@ class DeletedElement(BaseModel):
 class UpdatedElement(BaseModel):
     id: int
     new_id: int | None = None
-    name: str | None = None
+    name: Annotated[str | None, AfterValidator(check_empty)] = None
     link: str | None = None
     comment: str | None = None
     voice_acting: str | None = None
@@ -45,7 +46,7 @@ class UpdatedElement(BaseModel):
     type: str | None = None
     episodes: int | None = None
     picture: str | None = None
-    picture_mode: str | None = None
+    picture_mode: Annotated[str | None, AfterValidator(check_empty)] = None
     score: Annotated[float | None, AfterValidator(round_score)] = None
     status: str | None = None
     added_time: datetime | None = None
