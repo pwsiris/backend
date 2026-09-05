@@ -62,7 +62,7 @@ async def get_dump():
             "bite_parrying",
         ):
             data = await getattr(all_data, name.upper()).get_all(raw=True)
-            data_rows = "\n".join(data.split("|||||"))
+            data_rows = "\n".join(data)
             zip_file.writestr(f"{name}.txt", data_rows)
 
         for name in ("counter", "counter_death", "counter_global"):
