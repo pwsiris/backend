@@ -87,6 +87,7 @@ class DataParamsData:
                     inserted_element = await session.scalar(
                         insert(DataParams).values(dicted_element).returning(DataParams)
                     )
+                    dicted_element["id"] = inserted_element.id
                     self.raw_data[element.name] = dicted_element
                     self.data[element.name] = self.get_value(dicted_element)
 
@@ -115,6 +116,7 @@ class DataParamsData:
                         .where(DataParams.name == element.name)
                         .values(dicted_element)
                     )
+                    dicted_element["id"] = self.raw_data[element.name]["id"]
                     self.raw_data[element.name] = dicted_element
                     self.data[element.name] = self.get_value(dicted_element)
 
