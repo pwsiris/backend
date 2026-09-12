@@ -5,6 +5,7 @@ from datetime import time as dtime
 
 from common.config import cfg
 from common.errors import HTTPabort
+from common.utils import UNIX_BELOW_ZERO_DATE
 from db.common import get_model_dict
 from db.models import SCHEMA, Cinema
 from fastapi.encoders import jsonable_encoder
@@ -12,8 +13,6 @@ from schemas import cinema as schema_cinema
 from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql import text
-
-UNIX_BELOW_ZERO_DATE = ddate.fromisoformat("1969-12-31")
 
 
 class CinemaData:

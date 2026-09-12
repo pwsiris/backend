@@ -14,6 +14,12 @@ async def reset_data_params(session=Depends(get_session)):
     return HTTPanswer(200, "Data Params were erased")
 
 
+@router.get("")
+@router.get("/")
+async def get_data_params(raw: bool = False):
+    return HTTPanswer(200, await all_data.DATA_PARAMS.get_all(raw))
+
+
 @router.get("/{name}")
 async def get_data_param(name):
     return HTTPanswer(200, all_data.DATA_PARAMS.get(name))

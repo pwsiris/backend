@@ -1,6 +1,7 @@
 from datetime import date as ddate
 from typing import Annotated
 
+from common.utils import check_empty
 from pydantic import AfterValidator, BaseModel
 from schemas._records import Records, check_records_list_order
 
@@ -26,14 +27,14 @@ class NewElement(BaseModel):
 
 class UpdatedElement(BaseModel):
     id: int
-    name: str | None = None
+    name: Annotated[str | None, AfterValidator(check_empty)] = None
     description: str | None = None
     comment: str | None = None
     status: str | None = None
     date_start: ddate | None = None
     date_end: ddate | None = None
     picture: str | None = None
-    picture_mode: str | None = None
+    picture_mode: Annotated[str | None, AfterValidator(check_empty)] = None
     rules: list[str] | None = None
     records: Annotated[
         list[Records] | None, AfterValidator(check_records_list_order)

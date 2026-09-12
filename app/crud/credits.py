@@ -186,7 +186,13 @@ class CreditsData:
                     update_info.append("No element")
                     continue
                 update_info.append("Updated")
-                updated_elements.append(element.model_dump(exclude_none=True))
+
+                dicted_element = element.model_dump(exclude_none=True)
+                for key, value in dicted_element.items():
+                    if value in ("", []):
+                        dicted_element[key] = None
+
+                updated_elements.append(dicted_element)
                 if element.order and (1 <= element.order <= len(self.data)):
                     ids_for_order_update.append(element.id)
                     updated_orders.append({"id": element.id, "order": element.order})

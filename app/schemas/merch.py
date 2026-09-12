@@ -1,4 +1,7 @@
-from pydantic import BaseModel
+from typing import Annotated
+
+from common.utils import check_empty
+from pydantic import AfterValidator, BaseModel
 
 
 class NewElement(BaseModel):
@@ -15,7 +18,7 @@ class NewElement(BaseModel):
 
 class UpdatedElement(BaseModel):
     id: int
-    name: str | None = None
+    name: Annotated[str | None, AfterValidator(check_empty)] = None
     description: str | None = None
     price: str | None = None
     status: str | None = None

@@ -1,7 +1,15 @@
 import getopt
 import logging
 import sys
+from datetime import date, datetime
 from types import SimpleNamespace
+
+UNIX_ZERO_DATETIME = datetime.fromisoformat("1970-01-01 00:00+00:00")
+UNIX_BELOW_ZERO_DATETIME = datetime.fromisoformat("1969-12-31 23:59:59+00:00")
+UNIX_BELOW_ZERO_DATE = date.fromisoformat("1969-12-31")
+NON_STEAM_ID_BORDER = 1000 * 1000 * 1000 * 1000
+NON_MAL_ID_BORDER = 1000 * 1000 * 1000 * 1000
+
 
 levelDEBUG = logging.DEBUG
 # levelDEBUG = logging.INFO
@@ -34,3 +42,9 @@ def disable_unnecessary_loggers() -> None:
 
     httpx_logger = logging.getLogger("httpx")
     httpx_logger.setLevel(logging.CRITICAL)
+
+
+def check_empty(value: str | None) -> str | None:
+    if value == "":
+        raise ValueError("Can't be empty string")
+    return value

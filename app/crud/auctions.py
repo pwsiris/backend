@@ -6,6 +6,7 @@ from datetime import time as dtime
 
 from common.config import cfg
 from common.errors import HTTPabort
+from common.utils import UNIX_BELOW_ZERO_DATE
 from db.common import get_model_dict
 from db.models import SCHEMA, Auctions
 from fastapi.encoders import jsonable_encoder
@@ -278,6 +279,10 @@ class AuctionsData:
                                     self.data[auction_entity_id]["order"] += change
                     else:
                         del dicted_element["order"]
+
+                for key, value in dicted_element.items():
+                    if value in ("", UNIX_BELOW_ZERO_DATE):
+                        dicted_element[key] = None
 
                 async with session.begin():
                     await session.execute(

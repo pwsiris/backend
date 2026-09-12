@@ -6,6 +6,7 @@ from datetime import time as dtime
 import httpx
 from common.config import cfg
 from common.errors import HTTPabort
+from common.utils import NON_STEAM_ID_BORDER
 from db.common import get_model_dict
 from db.models import SCHEMA, Games
 from fastapi.encoders import jsonable_encoder
@@ -21,15 +22,13 @@ class GamesData:
         self.lists = {}
         self.genres = {}
         self.lock = asyncio.Lock()
-
-        self.non_steam_border = 1000 * 1000 * 1000 * 1000
-        self.non_steam_game = 1000 * 1000 * 1000 * 1000
+        self.non_steam_game = int(NON_STEAM_ID_BORDER)
 
     async def setup(self, session: AsyncSession) -> None:
         async with session.begin():
             db_data = await session.scalars(select(Games))
             for row in db_data:
-                if row.id > self.non_steam_border and row.id > self.non_steam_game:
+                if row.id > NON_STEAM_ID_BORDER and row.id > self.non_steam_game:
                     self.non_steam_game = row.id
                 self.data[row.id] = get_model_dict(row)
         self.resort()
@@ -46,7 +45,7 @@ class GamesData:
             self.data = {}
             self.lists = {}
             self.genres = {}
-            self.non_steam_game = self.non_steam_border
+            self.non_steam_game = int(NON_STEAM_ID_BORDER)
 
     def resort(self) -> None:
         typed_games = {}
@@ -84,7 +83,7 @@ class GamesData:
 
     async def check_steam(self, steam_id: int) -> dict:
         result = {}
-        if steam_id < self.non_steam_border:
+        if steam_id < NON_STEAM_ID_BORDER:
             result["link"] = f"https://store.steampowered.com/app/{steam_id}"
             try:
                 templates = [
@@ -384,7 +383,7 @@ class GamesData:
                 if games_list and game_id not in games_list:
                     continue
 
-                if game_id > self.non_steam_border or (
+                if game_id > NON_STEAM_ID_BORDER or (
                     self.data[game_id]["picture"] or ""
                 ).startswith("/static"):
                     continue
