@@ -28,7 +28,7 @@ async def get_data_param(name):
 @router.post("", dependencies=[Depends(login_admin_required)])
 @router.post("/", dependencies=[Depends(login_admin_required)])
 async def add_data_params(
-    elements: list[schema_data_params.Element],
+    elements: list[schema_data_params.NewElement],
     session=Depends(get_session),
 ):
     return HTTPanswer(201, await all_data.DATA_PARAMS.add(session, elements))
@@ -37,7 +37,7 @@ async def add_data_params(
 @router.put("", dependencies=[Depends(login_admin_required)])
 @router.put("/", dependencies=[Depends(login_admin_required)])
 async def update_data_params(
-    elements: list[schema_data_params.Element],
+    elements: list[schema_data_params.UpdatedElement],
     session=Depends(get_session),
 ):
     return HTTPanswer(
@@ -52,7 +52,7 @@ async def update_data_params(
 @router.delete("", dependencies=[Depends(login_admin_required)])
 @router.delete("/", dependencies=[Depends(login_admin_required)])
 async def delete_data_params(
-    elements: list[schema_data_params.ElementName],
+    elements: list[schema_data_params.DeletedElement],
     session=Depends(get_session),
 ):
     return HTTPanswer(

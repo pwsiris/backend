@@ -141,6 +141,9 @@ class SocialsData:
                 if dicted_element.get("link") in self.links:
                     update_info.append("New link not unique")
                     continue
+                if dicted_element.get("order") == -1:
+                    dicted_element["order"] = len(self.data)
+                    element.order = len(self.data)
                 if dicted_element.get("order") != None:
                     if 1 <= element.order <= len(self.data):
                         changed_orders = []

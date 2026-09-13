@@ -57,7 +57,7 @@ class TwitchBotList:
             inserted_elements_count = 0
             inserted_ids = []
             for element in elements:
-                if element.value in self.data.values():
+                if element.value in list(self.data.values()):
                     inserted_ids.append(-1)
                     continue
                 async with session.begin():
@@ -76,32 +76,38 @@ class TwitchBotList:
 
     async def delete(
         self, session: AsyncSession, elements: list[twitchbot.DeletedElement]
-    ) -> None:
+    ) -> list[str]:
         if not elements:
             return HTTPabort(422, "Empty list")
         async with self.lock:
-            deleted_elements_count = 0
+            delete_info = []
             for element in elements:
                 if element.id not in self.data:
+                    delete_info.append("False")
                     continue
                 async with session.begin():
                     await session.execute(
                         delete(TwitchBotLists).where(TwitchBotLists.id == element.id)
                     )
                 del self.data[element.id]
-                deleted_elements_count += 1
-            if not deleted_elements_count:
+                delete_info.append("True")
+            if "True" not in delete_info:
                 HTTPabort(404, "No elements to delete")
+            return delete_info
 
     async def update(
         self, session: AsyncSession, elements: list[twitchbot.UpdatedElement]
-    ) -> None:
+    ) -> list[str]:
         if not elements:
             return HTTPabort(422, "Empty list")
         async with self.lock:
-            updated_elements_count = 0
+            update_info = []
             for element in elements:
                 if element.id not in self.data:
+                    update_info.append("No element")
+                    continue
+                if element.value in list(self.data.values()):
+                    update_info.append("New value not unique")
                     continue
                 async with session.begin():
                     await session.execute(
@@ -110,15 +116,19 @@ class TwitchBotList:
                         .values(value=element.value)
                     )
                 self.data[element.id] = element.value
-                updated_elements_count += 1
-            if not updated_elements_count:
+                update_info.append("Updated")
+            if "Updated" not in update_info:
                 HTTPabort(404, "No elements to update")
+            return update_info
 
     async def get_all(self, raw: bool) -> dict[int, str]:
-        async with self.lock:
-            if raw:
-                return sorted(list(self.data.values()))
-            return self.data
+        if raw:
+            async with self.lock:
+                result = []
+                for id, value in self.data.items():
+                    result.append({"id": id, "value": value})
+                return sorted(result, key=lambda element: element["id"])
+        return self.data
 
     def get_random(self) -> str:
         if self.data:
