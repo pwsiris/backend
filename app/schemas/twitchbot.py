@@ -1,23 +1,17 @@
-from pydantic import BaseModel
+from typing import Annotated
 
-
-class TimecodeAnswer(BaseModel):
-    value: str
+from common.utils import check_empty
+from pydantic import AfterValidator, BaseModel
 
 
 class NewElement(BaseModel):
-    value: str
+    value: Annotated[str, AfterValidator(check_empty)]
 
 
 class UpdatedElement(BaseModel):
     id: int
-    value: str
+    value: Annotated[str, AfterValidator(check_empty)]
 
 
 class DeletedElement(BaseModel):
     id: int
-
-
-class Cheats(BaseModel):
-    streamer: int | None = None
-    defense: int | None = None

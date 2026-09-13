@@ -53,23 +53,15 @@ async def get_dump():
     zip_buffer = BytesIO()
 
     with ZipFile(zip_buffer, "a") as zip_file:
-        for name in (
+        lists = (
             "save_choices",
             "bite_ignore_list",
             "bite_actions",
             "bite_places",
             "bite_body_parts",
             "bite_parrying",
-        ):
-            data = await getattr(all_data, name.upper()).get_all(raw=True)
-            data_rows = "\n".join(data)
-            zip_file.writestr(f"{name}.txt", data_rows)
-
-        for name in ("counter", "counter_death", "counter_global"):
-            data = await getattr(all_data, name.upper()).get_all(raw=True)
-            zip_file.writestr(f"{name}.txt", data)
-
-        for name in (
+        )
+        content = (
             "anime",
             "auctions",
             "challenges",
@@ -82,11 +74,16 @@ async def get_dump():
             "merch",
             "roulette",
             "socials",
-        ):
+        )
+        for name in lists + content:
             data = await getattr(all_data, name.upper()).get_all(raw=True)
             zip_file.writestr(
                 f"{name}.json", json.dumps(data, ensure_ascii=False, indent=4)
             )
+
+        for name in ("counter", "counter_death", "counter_global"):
+            data = await getattr(all_data, name.upper()).get_all(raw=True)
+            zip_file.writestr(f"{name}.txt", data)
 
     zip_buffer.seek(0)
     current_datetime = datetime.now(timezone.utc).strftime("%Y-%m-%d_%H-%M-%S")

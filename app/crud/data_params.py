@@ -38,17 +38,18 @@ class DataParamsData:
     async def setup(self, session: AsyncSession) -> None:
         async with session.begin():
             db_data = await session.scalars(select(DataParams))
-            db_names = set()
             for row in db_data:
-                db_names.add(row.name)
-                self.raw_data[row.name] = get_model_dict(row)
-                self.data[row.name] = self.get_value(self.raw_data[row.name])
+                self.raw_data[row.id] = get_model_dict(row)
+                self.data[row.name] = self.get_value(self.raw_data[row.id])
 
             for name, value in self.DEFAULTS.items():
-                if name not in db_names:
+                if name not in self.data:
                     row = {"name": name, **value}
-                    await session.execute(insert(DataParams).values(row))
-                    self.raw_data[name] = row
+                    inserted_default = await session.scalar(
+                        insert(DataParams).values(row).returning(DataParams)
+                    )
+                    row["id"] = inserted_default.id
+                    self.raw_data[inserted_default.id] = row
                     self.data[name] = self.get_value(row)
 
         cfg.logger.info("Data Params info was loaded to memory")
@@ -65,12 +66,15 @@ class DataParamsData:
             self.data = {}
             for name, value in self.DEFAULTS.items():
                 row = {"name": name, **value}
-                await session.execute(insert(DataParams).values(row))
-                self.raw_data[name] = row
+                inserted_default = await session.scalar(
+                    insert(DataParams).values(row).returning(DataParams)
+                )
+                row["id"] = inserted_default.id
+                self.raw_data[inserted_default.id] = row
                 self.data[name] = self.get_value(row)
 
     async def add(
-        self, session: AsyncSession, elements: list[schema_data_params.Element]
+        self, session: AsyncSession, elements: list[schema_data_params.NewElement]
     ) -> list[int]:
         if not elements:
             return HTTPabort(422, "Empty list")
@@ -88,7 +92,7 @@ class DataParamsData:
                         insert(DataParams).values(dicted_element).returning(DataParams)
                     )
                     dicted_element["id"] = inserted_element.id
-                    self.raw_data[element.name] = dicted_element
+                    self.raw_data[inserted_element.id] = dicted_element
                     self.data[element.name] = self.get_value(dicted_element)
 
                     inserted_ids.append(inserted_element.id)
@@ -98,27 +102,27 @@ class DataParamsData:
             return inserted_ids
 
     async def update(
-        self, session: AsyncSession, elements: list[schema_data_params.Element]
+        self, session: AsyncSession, elements: list[schema_data_params.UpdatedElement]
     ) -> list[str]:
         if not elements:
             return HTTPabort(422, "Empty list")
         async with self.lock:
             update_info = []
             for element in elements:
-                if element.name not in self.data:
+                if element.id not in self.raw_data:
                     update_info.append("No element")
                     continue
-
-                dicted_element = element.model_dump()
+                dicted_element = element.model_dump(exclude={"id"})
                 async with session.begin():
                     await session.execute(
                         update(DataParams)
-                        .where(DataParams.name == element.name)
+                        .where(DataParams.id == element.id)
                         .values(dicted_element)
                     )
-                    dicted_element["id"] = self.raw_data[element.name]["id"]
-                    self.raw_data[element.name] = dicted_element
-                    self.data[element.name] = self.get_value(dicted_element)
+                    self.raw_data[element.id].update(dicted_element)
+                    self.data[self.raw_data[element.id]["name"]] = self.get_value(
+                        dicted_element
+                    )
 
                     update_info.append("Updated")
             if "Updated" not in update_info:
@@ -126,26 +130,26 @@ class DataParamsData:
             return update_info
 
     async def delete(
-        self, session: AsyncSession, elements: list[schema_data_params.ElementName]
+        self, session: AsyncSession, elements: list[schema_data_params.DeletedElement]
     ) -> list[str]:
         if not elements:
             return HTTPabort(422, "Empty list")
         async with self.lock:
             delete_info = []
             for element in elements:
-                if element.name not in self.data:
+                if element.id not in self.raw_data:
                     delete_info.append("False")
                     continue
-                if element.name in self.DEFAULTS:
+                if self.raw_data[element.id]["name"] in self.DEFAULTS:
                     delete_info.append("Can't remove params used in code")
                     continue
 
                 async with session.begin():
                     await session.execute(
-                        delete(DataParams).where(DataParams.name == element.name)
+                        delete(DataParams).where(DataParams.id == element.id)
                     )
-                    del self.data[element.name]
-                    del self.raw_data[element.name]
+                    del self.data[self.raw_data[element.id]["name"]]
+                    del self.raw_data[element.id]
 
                     delete_info.append("True")
             if "True" not in delete_info:
@@ -161,19 +165,21 @@ class DataParamsData:
         return self.data.get(name)
 
     async def get_all(self, raw=False) -> list[dict[str, Any]]:
-        async with self.lock:
-            result = []
-            for item in self.raw_data.values():
-                item_record = {}
-                for tag in (
-                    "id",
-                    "name",
-                    "value_bool",
-                    "value_int",
-                    "value_float",
-                    "value_str",
-                ):
-                    item_record[tag] = item.get(tag)
-                result.append(item_record)
+        if raw:
+            async with self.lock:
+                result = []
+                for item in self.raw_data.values():
+                    item_record = {}
+                    for tag in (
+                        "id",
+                        "name",
+                        "value_bool",
+                        "value_int",
+                        "value_float",
+                        "value_str",
+                    ):
+                        item_record[tag] = item.get(tag)
+                    result.append(item_record)
 
-            return sorted(result, key=lambda element: element["id"])
+                return sorted(result, key=lambda element: element["id"])
+        return self.data
